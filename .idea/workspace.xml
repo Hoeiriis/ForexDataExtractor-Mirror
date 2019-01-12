@@ -61,6 +61,9 @@
       </file>
     </leaf>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
@@ -119,6 +122,7 @@
     <option name="width" value="1390" />
     <option name="height" value="1007" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
@@ -132,6 +136,11 @@
             <path>
               <item name="IceRoots" type="b2602c69:ProjectViewProjectNode" />
               <item name="JForex-3-SDK" type="47feb1d3:ProjectViewModuleNode" />
+            </path>
+            <path>
+              <item name="IceRoots" type="b2602c69:ProjectViewProjectNode" />
+              <item name="JForex-3-SDK" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="IceRoots" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -243,7 +252,7 @@
       <workItem from="1545937425081" duration="856000" />
       <workItem from="1545987745320" duration="628000" />
       <workItem from="1546774320705" duration="599000" />
-      <workItem from="1547303744477" duration="840000" />
+      <workItem from="1547303744477" duration="1562000" />
     </task>
     <servers />
   </component>
@@ -280,10 +289,11 @@
     </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="14975000" />
+    <option name="totallyTimeSpent" value="15697000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="27" width="1920" height="1053" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.21634616" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -362,6 +372,9 @@
           <caret line="32" column="17" selection-start-line="32" selection-start-column="17" selection-end-line="32" selection-end-column="17" />
         </state>
       </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/JForex-3-SDK.iml">
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/src_real/DataStreamConnector.java">
       <provider selected="true" editor-type-id="text-editor">
