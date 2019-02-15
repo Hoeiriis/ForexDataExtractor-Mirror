@@ -3,6 +3,7 @@ package roots.SubWindows.Indicators;
 import com.dukascopy.api.*;
 import com.dukascopy.api.feed.IFeedDescriptor;
 import org.apache.commons.lang3.ArrayUtils;
+import roots.Snapshots.IndicatorType;
 import roots.Snapshots.Snapshot;
 import roots.Snapshots.SnapshotIndicator;
 import roots.SubWindows.SubscriptionWindowIndicator;
@@ -21,7 +22,7 @@ public class EMAWindow extends SubscriptionWindowIndicator<Double> {
         this.appliedPrice = appliedPrice;
         this.ema_period = ema_period;
 
-        snapshot_base = new SnapshotIndicator(this.id, String.format("EMA  LB %d  ema_p %d", lookBackRange, ema_period));
+        snapshot_base = new SnapshotIndicator(this.id, String.format("EMA  LB %d  ema_p %d", lookBackRange, ema_period), IndicatorType.EMA);
     }
 
     @Override

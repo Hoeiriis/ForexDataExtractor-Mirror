@@ -1,6 +1,7 @@
 import com.dukascopy.api.*;
 import com.dukascopy.api.feed.FeedDescriptor;
 import com.dukascopy.api.feed.util.TimePeriodAggregationFeedDescriptor;
+import roots.DataCollector;
 import roots.DataForwarder;
 import roots.SubWindows.Indicators.BollingerBandsWindow;
 import roots.SubWindows.Indicators.EMAWindow;
@@ -20,13 +21,20 @@ public class MainClass {
 
     public static void main(String [] args) throws Exception {
 
-        String password = "AawDL";
-        String userName = "DEMO2AawDL";
+        String password = "EbMSp";
+        String userName = "DEMO2EbMSp";
 
         /* Initializing components */
         List<SubscriptionWindowFeed> subWindows = InitSubscriptionWindowFeeds();
         List<SubscriptionWindowIndicator> indicatorWindows = InitSubscriptionWindowIndicators();
+
+        DataCollector theCollector = new DataCollector();
+        theCollector.autoSubscribe(subWindows.toArray(new SubscriptionWindow[0]));
+        theCollector.autoSubscribe(indicatorWindows.toArray(new SubscriptionWindow[0]));
+
+
         DataStreamConnector Conn = new DataStreamConnector(userName, password, false);
+        Conn.subscribeToInstrument(Instrument.EURUSD);
         DataForwarder forwarder = new DataForwarder(subWindows, indicatorWindows);
 
         /* Starting */

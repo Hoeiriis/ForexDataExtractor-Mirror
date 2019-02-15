@@ -35,7 +35,7 @@ public class DataForwarder implements IStrategy, IFeedListener {
             // Set history
             ITimedData lastFeedData = history.getFeedData(feedDescriptor, 0);
             List<ITimedData> feedDataList = history.getFeedData(feedDescriptor, subWin.LookBackRange, lastFeedData.getTime(), 0);
-            subWin.setWindow((IBar[]) feedDataList.toArray());
+            subWin.setWindow(feedDataList.toArray(new IBar[0]));
         }
 
         IIndicators indicators = context.getIndicators();
@@ -60,7 +60,7 @@ public class DataForwarder implements IStrategy, IFeedListener {
                 try {
                     w.pushToWindow((IBar) feedData);
                 } catch (Exception e) {
-                    System.out.print(String.format("exceptiuones: %s", e.toString()));
+                    System.out.print(String.format("exceptiuones: %s\n", e.toString()));
                 }
             }
         }
@@ -73,7 +73,7 @@ public class DataForwarder implements IStrategy, IFeedListener {
                 try {
                     w.pushToIndicator((IBar) feedData);
                 } catch (Exception e) {
-                    System.out.print(String.format("exceptiuones: %s", e.toString()));
+                    System.out.print(String.format("exceptiuones: %s\n", e.toString()));
                 }
             }
         }

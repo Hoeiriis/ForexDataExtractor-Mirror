@@ -3,6 +3,7 @@ package roots.SubWindows.Indicators;
 import com.dukascopy.api.*;
 import com.dukascopy.api.feed.IFeedDescriptor;
 import org.apache.commons.lang3.ArrayUtils;
+import roots.Snapshots.IndicatorType;
 import roots.Snapshots.Snapshot;
 import roots.Snapshots.SnapshotIndicator;
 import roots.SubWindows.SubscriptionWindowIndicator;
@@ -25,7 +26,7 @@ public class BollingerBandsWindow extends SubscriptionWindowIndicator<Double[]> 
         this.maType = maType;
         this.bband_period = bband_period;
         this.std_dev_from_price = std_dev_from_price;
-        snapshot_base = new SnapshotIndicator(this.id, String.format("BB  LB %d  BB_p %d", lookBackRange, bband_period));
+        snapshot_base = new SnapshotIndicator(this.id, String.format("BB  LB %d  BB_p %d", lookBackRange, bband_period), IndicatorType.BollingerBands);
     }
 
     @Override

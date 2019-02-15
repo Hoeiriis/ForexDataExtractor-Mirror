@@ -3,6 +3,7 @@ package roots.SubWindows.Indicators;
 import com.dukascopy.api.*;
 import com.dukascopy.api.feed.IFeedDescriptor;
 import org.apache.commons.lang3.ArrayUtils;
+import roots.Snapshots.IndicatorType;
 import roots.Snapshots.Snapshot;
 import roots.Snapshots.SnapshotIndicator;
 import roots.SubWindows.SubscriptionWindowIndicator;
@@ -21,7 +22,7 @@ public class RSIWindow extends SubscriptionWindowIndicator<Double> {
         this.appliedPrice = appliedPrice;
         this.rsi_period = rsi_period;
 
-        snapshot_base = new SnapshotIndicator(this.id, String.format("RSI  LB %d  rsi_p %d", lookBackRange, rsi_period));
+        snapshot_base = new SnapshotIndicator(this.id, String.format("RSI  LB %d  rsi_p %d", lookBackRange, rsi_period), IndicatorType.RSI);
     }
 
     @Override

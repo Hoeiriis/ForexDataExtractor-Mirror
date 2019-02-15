@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public abstract class SubscriptionWindow<T>
 {
-    public final UUID id = UUID.randomUUID();
+    public final UUID id;
     public final int LookBackRange;
     public final Instrument Instrument;
     ArrayDeque<T> Window;
@@ -18,6 +18,7 @@ public abstract class SubscriptionWindow<T>
 
     public SubscriptionWindow(Instrument instrument, int lookBackRange)
     {
+        id = UUID.randomUUID();
         LookBackRange = lookBackRange;
         Window = new ArrayDeque<T>();
         Instrument = instrument;
