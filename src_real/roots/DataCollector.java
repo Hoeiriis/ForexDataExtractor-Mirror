@@ -11,13 +11,15 @@ import java.util.*;
 
 public class DataCollector implements ISnapshotSubscriber
 {
-    private Map<UUID, Double[]> windowCollection;
+    private Map<UUID, Double[][]> featureCollection;
+    private Map<UUID, String> featureDescription;
     private Map<UUID, int[]> featureIndices;
     public ArrayList<Double> features;
 
     public DataCollector()
     {
-        windowCollection = new HashMap<>();
+        featureDescription = new HashMap<>();
+        featureCollection = new HashMap<>();
         featureIndices = new HashMap<>();
         features = new ArrayList<>();
     }
@@ -56,11 +58,14 @@ public class DataCollector implements ISnapshotSubscriber
         if(featureIndices.containsKey(snapshot.id))
         {
             UpdateFeatures(values.toArray(new Double[0]), featureIndices.get(snapshot.id));
+            featureCollection.put(snapshot.id, new Double[][]{values.toArray(new Double[0])});
         }
         else
         {
             int[] indices = GetNewIndicesAndUpdateFeatures(values.size(), values.toArray(new Double[0]));
             featureIndices.put(snapshot.id, indices);
+            featureCollection.put(snapshot.id, new Double[][]{values.toArray(new Double[0])});
+            featureDescription.put(snapshot.id, snapshot.description);
         }
     }
 
@@ -71,11 +76,14 @@ public class DataCollector implements ISnapshotSubscriber
         if(featureIndices.containsKey(snapshot.id))
         {
             UpdateFeatures(values, featureIndices.get(snapshot.id));
+            featureCollection.put(snapshot.id, snapshot.getWindow());
         }
         else
         {
             int[] indices = GetNewIndicesAndUpdateFeatures(values.length, values);
             featureIndices.put(snapshot.id, indices);
+            featureCollection.put(snapshot.id, snapshot.getWindow());
+            featureDescription.put(snapshot.id, snapshot.description);
         }
     }
 
