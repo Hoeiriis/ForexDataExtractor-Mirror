@@ -36,6 +36,12 @@ public class DataForwarder implements IStrategy, IFeedListener {
             ITimedData lastFeedData = history.getFeedData(feedDescriptor, 0);
             List<ITimedData> feedDataList = history.getFeedData(feedDescriptor, subWin.LookBackRange, lastFeedData.getTime(), 0);
             subWin.setWindow(feedDataList.toArray(new IBar[0]));
+
+            try {
+                subWin.notifySubscribers();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         IIndicators indicators = context.getIndicators();
@@ -43,6 +49,13 @@ public class DataForwarder implements IStrategy, IFeedListener {
         for (SubscriptionWindowIndicator subWinInd : subscriptionWindowIndicators){
             context.subscribeToFeed(subWinInd.getFeedDescriptor(), this);
             subWinInd.setIndicators(indicators);
+            ITimedData lastFeedData = history.getFeedData(subWinInd.getFeedDescriptor(), 0);
+
+            try {
+                subWinInd.pushToIndicator((IBar) lastFeedData);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

@@ -30,8 +30,9 @@ public class BollingerBandsWindow extends SubscriptionWindowIndicator<Double[]> 
     }
 
     @Override
-    public void pushToIndicator(IBar latestBar) throws JFException {
+    public void pushToIndicator(IBar latestBar) throws Exception {
         this.indicator_window = CalculateIndicator(latestBar);
+        notifySubscribers();
     }
 
     @Override
@@ -63,7 +64,7 @@ public class BollingerBandsWindow extends SubscriptionWindowIndicator<Double[]> 
     protected Snapshot SnapshotGenerator()
     {
         snapshot_base.setWindow(this.getWindow());
-        return null;
+        return snapshot_base;
     }
 
     @Override

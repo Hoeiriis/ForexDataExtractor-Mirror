@@ -21,8 +21,8 @@ public class MainClass {
 
     public static void main(String [] args) throws Exception {
 
-        String password = "EbMSp";
-        String userName = "DEMO2EbMSp";
+        String password = "DfNED";
+        String userName = "DEMO2DfNED";
 
         /* Initializing components */
         List<SubscriptionWindowFeed> subWindows = InitSubscriptionWindowFeeds();

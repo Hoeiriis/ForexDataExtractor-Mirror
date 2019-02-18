@@ -26,8 +26,9 @@ public class RSIWindow extends SubscriptionWindowIndicator<Double> {
     }
 
     @Override
-    public void pushToIndicator(IBar latestBar) throws JFException {
+    public void pushToIndicator(IBar latestBar) throws Exception {
         this.indicator_window = CalculateIndicator(latestBar);
+        notifySubscribers();
     }
 
     @Override
@@ -60,6 +61,6 @@ public class RSIWindow extends SubscriptionWindowIndicator<Double> {
     protected Snapshot SnapshotGenerator()
     {
         snapshot_base.setWindow(new Double[][] {this.getWindow()});
-        return null;
+        return snapshot_base;
     }
 }

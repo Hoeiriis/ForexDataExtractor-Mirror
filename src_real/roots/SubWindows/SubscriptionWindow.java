@@ -43,7 +43,7 @@ public abstract class SubscriptionWindow<T>
         return id;
     }
 
-    protected void notifySubscribers() throws Exception {
+    public void notifySubscribers() throws Exception {
         Snapshot snapshot = SnapshotGenerator();
         for (ISnapshotSubscriber subscriber: snapshotSubscribers) {
             subscriber.NewSnapshot(snapshot);

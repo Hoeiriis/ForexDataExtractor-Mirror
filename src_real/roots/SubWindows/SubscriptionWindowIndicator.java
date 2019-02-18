@@ -39,7 +39,7 @@ public abstract class SubscriptionWindowIndicator<T> extends SubscriptionWindow<
         throw new NotActiveException("This method is not active");
     }
 
-    public abstract void pushToIndicator(IBar latestBar) throws JFException;
+    public abstract void pushToIndicator(IBar latestBar) throws Exception;
 
     protected abstract List<T> CalculateIndicator(IBar latestBar) throws JFException;
 }

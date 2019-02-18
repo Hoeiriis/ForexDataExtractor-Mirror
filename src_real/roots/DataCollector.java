@@ -104,6 +104,6 @@ public class DataCollector implements ISnapshotSubscriber
     }
 
     public void DisplayFeatures(){
-        System.out.print("\nFeatures:"+features.toString());
+        System.out.print("\nNmb: "+features.size()+"\nFeatures:"+features.toString());
     }
 }
