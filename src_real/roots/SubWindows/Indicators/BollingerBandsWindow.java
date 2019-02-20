@@ -19,14 +19,14 @@ public class BollingerBandsWindow extends SubscriptionWindowIndicator<Double[]> 
     private double std_dev_from_price;
     private SnapshotIndicator snapshot_base;
 
-    public BollingerBandsWindow(IFeedDescriptor feedDescriptor, int lookBackRange, IIndicators.AppliedPrice appliedPrice, int bband_period, double std_dev_from_price, IIndicators.MaType maType) {
+    public BollingerBandsWindow(IFeedDescriptor feedDescriptor, int lookBackRange, IIndicators.AppliedPrice appliedPrice, int bband_period, double std_dev_from_price, IIndicators.MaType maType, String name) {
         super(feedDescriptor, lookBackRange);
         this.appliedPrice = appliedPrice;
 
         this.maType = maType;
         this.bband_period = bband_period;
         this.std_dev_from_price = std_dev_from_price;
-        snapshot_base = new SnapshotIndicator(this.id, String.format("BB  LB %d  BB_p %d", lookBackRange, bband_period), IndicatorType.BollingerBands);
+        snapshot_base = new SnapshotIndicator(this.id, name, IndicatorType.BollingerBands);
     }
 
     @Override

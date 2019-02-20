@@ -17,12 +17,12 @@ public class RSIWindow extends SubscriptionWindowIndicator<Double> {
     private int rsi_period;
     private SnapshotIndicator snapshot_base;
 
-    public RSIWindow(IFeedDescriptor feedDescriptor, int lookBackRange, IIndicators.AppliedPrice appliedPrice, int rsi_period) {
+    public RSIWindow(IFeedDescriptor feedDescriptor, int lookBackRange, IIndicators.AppliedPrice appliedPrice, int rsi_period, String name) {
         super(feedDescriptor, lookBackRange);
         this.appliedPrice = appliedPrice;
         this.rsi_period = rsi_period;
 
-        snapshot_base = new SnapshotIndicator(this.id, String.format("RSI  LB %d  rsi_p %d", lookBackRange, rsi_period), IndicatorType.RSI);
+        snapshot_base = new SnapshotIndicator(this.id, name, IndicatorType.RSI);
     }
 
     @Override

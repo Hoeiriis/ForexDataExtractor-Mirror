@@ -17,12 +17,12 @@ public class EMAWindow extends SubscriptionWindowIndicator<Double> {
     private int ema_period;
     private SnapshotIndicator snapshot_base;
 
-    public EMAWindow(IFeedDescriptor feedDescriptor, int lookBackRange, IIndicators.AppliedPrice appliedPrice, int ema_period) {
+    public EMAWindow(IFeedDescriptor feedDescriptor, int lookBackRange, IIndicators.AppliedPrice appliedPrice, int ema_period, String name) {
         super(feedDescriptor, lookBackRange);
         this.appliedPrice = appliedPrice;
         this.ema_period = ema_period;
 
-        snapshot_base = new SnapshotIndicator(this.id, String.format("EMA  LB %d  ema_p %d", lookBackRange, ema_period), IndicatorType.EMA);
+        snapshot_base = new SnapshotIndicator(this.id, name, IndicatorType.EMA);
     }
 
     @Override
