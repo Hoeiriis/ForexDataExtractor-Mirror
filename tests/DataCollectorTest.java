@@ -29,7 +29,7 @@ public class DataCollectorTest
     @BeforeMethod
     public void setUp()
     {
-        theCollector = new DataCollector();
+        theCollector = new DataCollector(true);
         pushNumber = 0;
     }
 

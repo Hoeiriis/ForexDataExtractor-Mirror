@@ -15,13 +15,16 @@ public class DataCollector implements ISnapshotSubscriber
     private Map<UUID, String> featureDescription;
     private Map<UUID, int[]> featureIndices;
     public ArrayList<Double> features;
+    public boolean pushForward;
 
-    public DataCollector()
+    public DataCollector(boolean startPushing)
     {
         featureDescription = new HashMap<>();
         featureCollection = new HashMap<>();
         featureIndices = new HashMap<>();
         features = new ArrayList<>();
+
+        pushForward = startPushing;
     }
 
 
@@ -34,7 +37,10 @@ public class DataCollector implements ISnapshotSubscriber
             UpdateSnapshotIndicator((SnapshotIndicator) newSnapshot);
         }
 
-        DisplayFeatures();
+
+        if(pushForward) {
+            DisplayFeatures();
+        }
     }
 
     public void autoSubscribe(SubscriptionWindow[] subscriptionWindows)
@@ -113,5 +119,13 @@ public class DataCollector implements ISnapshotSubscriber
 
     public void DisplayFeatures(){
         System.out.print("\nNmb: "+features.size()+"\nFeatures:"+features.toString());
+    }
+
+    public Map<UUID, Double[][]> getFeatureCollection() {
+        return featureCollection;
+    }
+
+    public Map<UUID, String> getFeatureDescription() {
+        return featureDescription;
     }
 }
