@@ -11,7 +11,12 @@ import roots.SubWindows.SubscriptionWindowIndicator;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static roots.ThingsThatShouldBeEasyInJavaButAreNot.flatten2DDoubleArray;
 
 public class DataForwarder_Historical implements IStrategy, IFeedListener {
 
@@ -19,6 +24,8 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
     public List<SubscriptionWindowIndicator> subscriptionWindowIndicators;
     private IHistory history;
     private DataCollector theCollector;
+    private Map<UUID, String> featureDescription;
+    private List<Map<UUID, Double[][]>> featureCollection;
 
 
     public DataForwarder_Historical()
@@ -28,6 +35,7 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         /* Initializing components */
         this.subscriptionWindowFeeds = initializer.InitSubscriptionWindowFeeds();
         this.subscriptionWindowIndicators = initializer.InitSubscriptionWindowIndicators();
+        this.featureCollection = new ArrayList<>();
 
         theCollector = new DataCollector(false);
         theCollector.autoSubscribe(this.subscriptionWindowFeeds.toArray(new SubscriptionWindow[0]));
@@ -79,7 +87,22 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
 
             feedWindowFeeds(feedDescriptor, bar15back);
             feedWindowIndicators(feedDescriptor, bar15back);
-        } catch (JFException e) {
+
+            var features = theCollector.getFeatureCollection();
+            featureDescription = theCollector.getFeatureDescription();
+
+            if(featureCollection.size() > 0 && featureCollection.get(0).size() != featureDescription.size()) {
+                featureCollection = new ArrayList<>();
+            }
+
+            if (featureCollection.size() >= 1000){
+                var stringData = convertToStrings();
+                writeToCSV(stringData, "whatevs");
+            }
+
+            featureCollection.add(features);
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -116,6 +139,43 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         return bars.get(0);
     }
 
+
+    private List<String[]> convertToStrings(){
+
+        List<String[]> dataAsString = new ArrayList<>();
+        var keys = featureDescription.keySet();
+
+        List<String> descriptions = new ArrayList<>();
+        var featureCol = featureCollection.get(0);
+
+        for (var key : keys){
+            var values = featureCol.get(key);
+            var size = flatten2DDoubleArray(values).length;
+
+            var desc = featureDescription.get(key);
+            for (int i = 0; i < size; i++) {
+                descriptions.add(desc + i);
+            }
+        }
+
+        dataAsString.add(descriptions.toArray(new String[]{}));
+
+        for (var featureSet : featureCollection ){
+            List<String> featuresStrings = new ArrayList<>();
+            for (var key : keys) {
+                var doubleMatrix = featureSet.get(key);
+                var flattened = flatten2DDoubleArray(doubleMatrix);
+
+                for (var entry : flattened){
+                    featuresStrings.add(entry.toString());
+                }
+            }
+
+            dataAsString.add(featuresStrings.toArray(new String[]{}));
+        }
+
+        return dataAsString;
+    }
 
     public void writeToCSV(List<String[]> data,  String FilePath) throws Exception{
         Writer writer;

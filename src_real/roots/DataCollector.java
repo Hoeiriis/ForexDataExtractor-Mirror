@@ -77,7 +77,7 @@ public class DataCollector implements ISnapshotSubscriber
 
     private void UpdateSnapshotIndicator(SnapshotIndicator snapshot) throws Exception{
 
-        Double[] values = ThingsThatShouldBeEasyInJavaButAreNot.flatten2DIntArray(snapshot.getWindow());
+        Double[] values = ThingsThatShouldBeEasyInJavaButAreNot.flatten2DDoubleArray(snapshot.getWindow());
 
         if(featureIndices.containsKey(snapshot.id))
         {

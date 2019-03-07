@@ -7,7 +7,7 @@ import org.apache.commons.lang3.ArrayUtils;
 */
 public class ThingsThatShouldBeEasyInJavaButAreNot
 {
-    public static Double[] flatten2DIntArray(Double[][] arrayToFlatten){
+    public static Double[] flatten2DDoubleArray(Double[][] arrayToFlatten){
         Double[] outArray = new Double[0];
 
         for (Double[] subarray : arrayToFlatten)
