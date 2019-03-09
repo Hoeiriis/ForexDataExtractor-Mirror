@@ -11,12 +11,7 @@ import roots.SubWindows.SubscriptionWindowIndicator;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static roots.ThingsThatShouldBeEasyInJavaButAreNot.flatten2DDoubleArray;
 
 public class DataForwarder_Historical implements IStrategy, IFeedListener {
 
@@ -24,8 +19,6 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
     public List<SubscriptionWindowIndicator> subscriptionWindowIndicators;
     private IHistory history;
     private DataCollector theCollector;
-    private Map<UUID, String> featureDescription;
-    private List<Map<UUID, Double[][]>> featureCollection;
 
 
     public DataForwarder_Historical()
@@ -35,7 +28,6 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         /* Initializing components */
         this.subscriptionWindowFeeds = initializer.InitSubscriptionWindowFeeds();
         this.subscriptionWindowIndicators = initializer.InitSubscriptionWindowIndicators();
-        this.featureCollection = new ArrayList<>();
 
         theCollector = new DataCollector(false);
         theCollector.autoSubscribe(this.subscriptionWindowFeeds.toArray(new SubscriptionWindow[0]));
