@@ -14,11 +14,11 @@ public class SubscriptionWindowFeed extends SubscriptionWindow<IBar>
     public final IFeedDescriptor FeedDescriptor;
     private SnapshotFeed snapshot_base;
 
-    public SubscriptionWindowFeed(IFeedDescriptor feedDescriptor, int lookBackRange)
+    public SubscriptionWindowFeed(IFeedDescriptor feedDescriptor, int lookBackRange, String name)
     {
         super(feedDescriptor.getInstrument(), lookBackRange);
         FeedDescriptor = feedDescriptor;
-        snapshot_base = new SnapshotFeed(this.id, String.format("Feed  LB %d  Period %d", lookBackRange, feedDescriptor.getPeriod().getInterval()));
+        snapshot_base = new SnapshotFeed(this.id, name);
     }
 
     public IFeedDescriptor getFeedDescriptor(){

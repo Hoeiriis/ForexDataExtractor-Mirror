@@ -63,7 +63,7 @@ public class SubscriptionWindowFeedTest
     public void setUp()
     {
         // 1 min Bar, 30 min Lookback, Price/Volume
-        testWindow = new SubscriptionWindowFeed(feed, lookback);
+        testWindow = new SubscriptionWindowFeed(feed, lookback, "test1");
         receiver = new Receiver();
         testWindow.addSubscriber(receiver);
     }

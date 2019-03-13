@@ -4,14 +4,22 @@ import com.dukascopy.api.*;
 import com.dukascopy.api.feed.IFeedDescriptor;
 import com.dukascopy.api.feed.IFeedListener;
 import com.opencsv.CSVWriter;
+import com.opencsv.ICSVWriter;
+import com.opencsv.bean.OpencsvUtils;
 import roots.SubWindows.SubscriptionWindow;
 import roots.SubWindows.SubscriptionWindowFeed;
 import roots.SubWindows.SubscriptionWindowIndicator;
 
+import java.io.Console;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static roots.ThingsThatShouldBeEasyInJavaButAreNot.flatten2DDoubleArray;
 
 public class DataForwarder_Historical implements IStrategy, IFeedListener {
 
@@ -19,6 +27,8 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
     public List<SubscriptionWindowIndicator> subscriptionWindowIndicators;
     private IHistory history;
     private DataCollector theCollector;
+    private Map<UUID, String> featureDescription;
+    private List<Map<UUID, Double[][]>> featureCollection;
 
 
     public DataForwarder_Historical()
@@ -32,20 +42,27 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         theCollector = new DataCollector(false);
         theCollector.autoSubscribe(this.subscriptionWindowFeeds.toArray(new SubscriptionWindow[0]));
         theCollector.autoSubscribe(this.subscriptionWindowIndicators.toArray(new SubscriptionWindow[0]));
+        featureCollection = new ArrayList<>();
     }
 
     @Override
     public void onStart(IContext context) throws JFException
     {
         history = context.getHistory();
+        var descriptorsToSubscribe = new ArrayList<IFeedDescriptor>();
 
+        // Initialize and acquire data for FeedWindows
         for (SubscriptionWindowFeed subWin : subscriptionWindowFeeds)
         {
             IFeedDescriptor feedDescriptor = subWin.getFeedDescriptor();
-            context.subscribeToFeed(feedDescriptor, this);
+
+            // Add if not already subscribed
+            if (!descriptorsToSubscribe.contains(feedDescriptor)){
+                descriptorsToSubscribe.add(feedDescriptor);
+            }
 
             // Set history
-            ITimedData lastFeedData = history.getFeedData(feedDescriptor, 0);
+            ITimedData lastFeedData = history.getFeedData(feedDescriptor, 0); // TODO: Acquire 15 minutes back instead
             List<ITimedData> feedDataList = history.getFeedData(feedDescriptor, subWin.LookBackRange, lastFeedData.getTime(), 0);
             subWin.setWindow(feedDataList.toArray(new IBar[0]));
 
@@ -53,15 +70,22 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
                 subWin.notifySubscribers();
             } catch (Exception e) {
                 e.printStackTrace();
+                System.out.print(e.getMessage());
             }
         }
 
-        IIndicators indicators = context.getIndicators();
 
+        // Initialize and acquire information for IndicatorWindows
+        IIndicators indicators = context.getIndicators();
         for (SubscriptionWindowIndicator subWinInd : subscriptionWindowIndicators){
-            context.subscribeToFeed(subWinInd.getFeedDescriptor(), this);
+
+            var indFeedDescriptor = subWinInd.getFeedDescriptor();
+
+            if (!descriptorsToSubscribe.contains(indFeedDescriptor)){
+                descriptorsToSubscribe.add(indFeedDescriptor);
+            }
             subWinInd.setIndicators(indicators);
-            ITimedData lastFeedData = history.getFeedData(subWinInd.getFeedDescriptor(), 0);
+            ITimedData lastFeedData = history.getFeedData(indFeedDescriptor, 0);
 
             try {
                 subWinInd.pushToIndicator((IBar) lastFeedData);
@@ -69,14 +93,21 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
                 e.printStackTrace();
             }
         }
+
+        // Subscribe to all feeds present
+        for (var feed : descriptorsToSubscribe){
+            context.subscribeToFeed(feed, this);
+        }
     }
 
     @Override
     public void onFeedData(IFeedDescriptor feedDescriptor, ITimedData feedData)
     {
         try {
+            // Get data from 15 minutes ago
             IBar bar15back = getBar15MinutesBack((IBar) feedData);
 
+            // TODO: Also get target value/values
             feedWindowFeeds(feedDescriptor, bar15back);
             feedWindowIndicators(feedDescriptor, bar15back);
 
@@ -87,15 +118,18 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
                 featureCollection = new ArrayList<>();
             }
 
-            if (featureCollection.size() >= 1000){
+            if (featureCollection.size() > 0 && featureCollection.size() % 6 == 0){
                 var stringData = convertToStrings();
-                writeToCSV(stringData, "whatevs");
+                writeToCSV(stringData, "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test2.csv");
+                System.out.print("printed \n");
             }
 
             featureCollection.add(features);
+            System.out.print(featureCollection.size()+"\n");
 
         } catch (Exception e) {
             e.printStackTrace();
+            System.out.print(e.getMessage());
         }
     }
 
@@ -131,16 +165,14 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         return bars.get(0);
     }
 
+    private List<String> createDescription() {
 
-    private List<String[]> convertToStrings(){
-
-        List<String[]> dataAsString = new ArrayList<>();
         var keys = featureDescription.keySet();
 
         List<String> descriptions = new ArrayList<>();
         var featureCol = featureCollection.get(0);
 
-        for (var key : keys){
+        for (var key : keys) {
             var values = featureCol.get(key);
             var size = flatten2DDoubleArray(values).length;
 
@@ -150,7 +182,14 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
             }
         }
 
-        dataAsString.add(descriptions.toArray(new String[]{}));
+        return descriptions;
+    }
+
+
+    private List<String[]> convertToStrings(){
+
+        List<String[]> dataAsString = new ArrayList<>();
+        var keys = featureDescription.keySet();
 
         for (var featureSet : featureCollection ){
             List<String> featuresStrings = new ArrayList<>();
@@ -172,15 +211,23 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
     public void writeToCSV(List<String[]> data,  String FilePath) throws Exception{
         Writer writer;
         File f = new File(FilePath);
+        boolean writeDesc = false;
 
         if(f.exists()) {
             writer = new FileWriter(FilePath, true);
         }
         else{
             writer = new FileWriter(FilePath);
+            writeDesc = true;
         }
 
-        CSVWriter csvWriter = new CSVWriter(writer, ',', '\0');
+        CSVWriter csvWriter = new CSVWriter(writer, ',', '\0', ICSVWriter.DEFAULT_ESCAPE_CHARACTER, ICSVWriter.DEFAULT_LINE_END);
+
+        if(writeDesc){
+            var desc = createDescription();
+            csvWriter.writeNext(desc.toArray(new String[]{}));
+        }
+
         csvWriter.writeAll(data);
         csvWriter.close();
     }

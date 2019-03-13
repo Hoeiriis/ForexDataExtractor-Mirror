@@ -24,17 +24,17 @@ public class SubscriptionInitializer {
 
         // 1 min Bar, 30 min Lookback, Price/Volume
         FeedDescriptor feed1= new TimePeriodAggregationFeedDescriptor(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK);
-        SubscriptionWindowFeed window1 = new SubscriptionWindowFeed(feed1, 30);
+        SubscriptionWindowFeed window1 = new SubscriptionWindowFeed(feed1, 30, "feed1min");
         returnList.add(window1);
 
         // 5 min Bar, 60 min Lookback, Price/Volume
         FeedDescriptor feed2 = new TimePeriodAggregationFeedDescriptor(Instrument.EURUSD, Period.FIVE_MINS, OfferSide.ASK);
-        SubscriptionWindowFeed window2 = new SubscriptionWindowFeed(feed2, 12);
+        SubscriptionWindowFeed window2 = new SubscriptionWindowFeed(feed2, 12, "feed5mins");
         returnList.add(window2);
 
         // 15 min Bar, 4 hours Lookback, Price/Volume
         FeedDescriptor feed3 = new TimePeriodAggregationFeedDescriptor(Instrument.EURUSD, Period.FIFTEEN_MINS, OfferSide.ASK);
-        SubscriptionWindowFeed window3 = new SubscriptionWindowFeed(feed3, 16);
+        SubscriptionWindowFeed window3 = new SubscriptionWindowFeed(feed3, 16, "feed15min");
         returnList.add(window3);
 
         return returnList;
