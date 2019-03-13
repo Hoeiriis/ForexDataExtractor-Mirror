@@ -29,6 +29,7 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
     private DataCollector theCollector;
     private Map<UUID, String> featureDescription;
     private List<Map<UUID, Double[][]>> featureCollection;
+    private int targetRange;
 
 
     public DataForwarder_Historical()
@@ -62,9 +63,10 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
             }
 
             // Set history
-            ITimedData lastFeedData = history.getFeedData(feedDescriptor, 0); // TODO: Acquire 15 minutes back instead
-            List<ITimedData> feedDataList = history.getFeedData(feedDescriptor, subWin.LookBackRange, lastFeedData.getTime(), 0);
-            subWin.setWindow(feedDataList.toArray(new IBar[0]));
+            ITimedData lastFeedData = history.getFeedData(feedDescriptor, 1);
+            IBar bar15back = getBarsNMinutesBack((IBar) lastFeedData, 15).get(0);
+            List<ITimedData> feedDataList = history.getFeedData(feedDescriptor, subWin.LookBackRange, bar15back.getTime(), 0);
+            subWin.setWindow((IBar[]) feedDataList.toArray(new IBar[0]));
 
             try {
                 subWin.notifySubscribers();
@@ -85,10 +87,11 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
                 descriptorsToSubscribe.add(indFeedDescriptor);
             }
             subWinInd.setIndicators(indicators);
-            ITimedData lastFeedData = history.getFeedData(indFeedDescriptor, 0);
+            ITimedData lastFeedData = history.getFeedData(indFeedDescriptor, 1);
+            IBar bar15back = getBarsNMinutesBack((IBar) lastFeedData, 15).get(0);
 
             try {
-                subWinInd.pushToIndicator((IBar) lastFeedData);
+                subWinInd.pushToIndicator(bar15back);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -105,22 +108,24 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
     {
         try {
             // Get data from 15 minutes ago
-            IBar bar15back = getBar15MinutesBack((IBar) feedData);
+            List<IBar> bars15back = getBarsNMinutesBack((IBar) feedData, 15);
+
+            bars15back.get(0).
 
             // TODO: Also get target value/values
-            feedWindowFeeds(feedDescriptor, bar15back);
-            feedWindowIndicators(feedDescriptor, bar15back);
+            feedWindowFeeds(feedDescriptor, bars15back.get(0));
+            feedWindowIndicators(feedDescriptor, bars15back.get(0));
 
             var features = theCollector.getFeatureCollection();
             featureDescription = theCollector.getFeatureDescription();
 
-            if(featureCollection.size() > 0 && featureCollection.get(0).size() != featureDescription.size()) {
+            if(featureCollection.size() > 0 && featureCollection.get(0).size()+targetRange != featureDescription.size()) {
                 featureCollection = new ArrayList<>();
             }
 
             if (featureCollection.size() > 0 && featureCollection.size() % 6 == 0){
                 var stringData = convertToStrings();
-                writeToCSV(stringData, "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test2.csv");
+                writeToCSV(stringData, "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test3.csv");
                 System.out.print("printed \n");
             }
 
@@ -159,10 +164,10 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         }
     }
 
-    private IBar getBar15MinutesBack(IBar currentBar) throws JFException {
-        long startTime =  history.getTimeForNBarsBack(Period.ONE_MIN, currentBar.getTime(), 15);
+    private List<IBar> getBarsNMinutesBack(IBar currentBar, int minutesBack) throws JFException {
+        long startTime =  history.getTimeForNBarsBack(Period.ONE_MIN, currentBar.getTime(), minutesBack);
         List<IBar> bars = history.getBars(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, startTime, currentBar.getTime());
-        return bars.get(0);
+        return bars;
     }
 
     private List<String> createDescription() {
