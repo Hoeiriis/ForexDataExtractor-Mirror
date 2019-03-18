@@ -6,6 +6,7 @@ import com.dukascopy.api.feed.IFeedListener;
 import com.opencsv.CSVWriter;
 import com.opencsv.ICSVWriter;
 import com.opencsv.bean.OpencsvUtils;
+import roots.Snapshots.SnapshotTarget;
 import roots.SubWindows.SubscriptionWindow;
 import roots.SubWindows.SubscriptionWindowFeed;
 import roots.SubWindows.SubscriptionWindowIndicator;
@@ -28,8 +29,9 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
     private IHistory history;
     private DataCollector theCollector;
     private Map<UUID, String> featureDescription;
-    private List<Map<UUID, Double[][]>> featureCollection;
+    private List<Map<UUID, Double[]>> featureCollection;
     private int targetRange;
+    private SnapshotTarget targetSnapshot;
 
 
     public DataForwarder_Historical()
@@ -44,6 +46,7 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         theCollector.autoSubscribe(this.subscriptionWindowFeeds.toArray(new SubscriptionWindow[0]));
         theCollector.autoSubscribe(this.subscriptionWindowIndicators.toArray(new SubscriptionWindow[0]));
         featureCollection = new ArrayList<>();
+        targetRange = 15;
     }
 
     @Override
@@ -62,7 +65,7 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
                 descriptorsToSubscribe.add(feedDescriptor);
             }
 
-            // Set history
+            // Set history TODO Some bug related to 15 back and actual period
             ITimedData lastFeedData = history.getFeedData(feedDescriptor, 1);
             IBar bar15back = getBarsNMinutesBack((IBar) lastFeedData, 15).get(0);
             List<ITimedData> feedDataList = history.getFeedData(feedDescriptor, subWin.LookBackRange, bar15back.getTime(), 0);
@@ -108,13 +111,12 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
     {
         try {
             // Get data from 15 minutes ago
-            List<IBar> bars15back = getBarsNMinutesBack((IBar) feedData, 15);
+            List<IBar> bars15back = getBarsNMinutesBack((IBar) feedData, targetRange);
 
-            bars15back.get(0).
-
-            // TODO: Also get target value/values
             feedWindowFeeds(feedDescriptor, bars15back.get(0));
             feedWindowIndicators(feedDescriptor, bars15back.get(0));
+            targetSnapshot.setWindow(computeTargetRange(bars15back));
+            theCollector.NewSnapshot(targetSnapshot);
 
             var features = theCollector.getFeatureCollection();
             featureDescription = theCollector.getFeatureDescription();
@@ -125,7 +127,7 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
 
             if (featureCollection.size() > 0 && featureCollection.size() % 6 == 0){
                 var stringData = convertToStrings();
-                writeToCSV(stringData, "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test3.csv");
+                writeToCSV(stringData, "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test4t.csv");
                 System.out.print("printed \n");
             }
 
@@ -170,6 +172,15 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         return bars;
     }
 
+    private Double[] computeTargetRange(List<IBar> targetBars){
+        List<Double> targetVals = new ArrayList<>();
+        for(var bar : targetBars){
+            targetVals.add((bar.getOpen()+bar.getHigh()+bar.getLow()+bar.getClose())/4);
+        }
+
+        return targetVals.toArray(new Double[]{});
+    }
+
     private List<String> createDescription() {
 
         var keys = featureDescription.keySet();
@@ -178,8 +189,7 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         var featureCol = featureCollection.get(0);
 
         for (var key : keys) {
-            var values = featureCol.get(key);
-            var size = flatten2DDoubleArray(values).length;
+            var size = featureCol.get(key).length;
 
             var desc = featureDescription.get(key);
             for (int i = 0; i < size; i++) {
@@ -199,10 +209,9 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         for (var featureSet : featureCollection ){
             List<String> featuresStrings = new ArrayList<>();
             for (var key : keys) {
-                var doubleMatrix = featureSet.get(key);
-                var flattened = flatten2DDoubleArray(doubleMatrix);
+                var features = featureSet.get(key);
 
-                for (var entry : flattened){
+                for (var entry : features){
                     featuresStrings.add(entry.toString());
                 }
             }

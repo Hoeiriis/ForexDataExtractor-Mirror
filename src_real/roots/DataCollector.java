@@ -4,6 +4,7 @@ import com.dukascopy.api.IBar;
 import roots.Snapshots.Snapshot;
 import roots.Snapshots.SnapshotFeed;
 import roots.Snapshots.SnapshotIndicator;
+import roots.Snapshots.SnapshotTarget;
 import roots.SubWindows.ISnapshotSubscriber;
 import roots.SubWindows.SubscriptionWindow;
 
@@ -11,7 +12,7 @@ import java.util.*;
 
 public class DataCollector implements ISnapshotSubscriber
 {
-    private Map<UUID, Double[][]> featureCollection;
+    private Map<UUID, Double[]> featureCollection;
     private Map<UUID, String> featureDescription;
     private Map<UUID, int[]> featureIndices;
     public ArrayList<Double> features;
@@ -31,12 +32,7 @@ public class DataCollector implements ISnapshotSubscriber
     @Override
     public void NewSnapshot(Snapshot newSnapshot) throws Exception
     {
-        if (newSnapshot instanceof SnapshotFeed){
-            UpdateSnapShotFeed((SnapshotFeed) newSnapshot);
-        } else if (newSnapshot instanceof SnapshotIndicator){
-            UpdateSnapshotIndicator((SnapshotIndicator) newSnapshot);
-        }
-
+        UpdateSnapShot(newSnapshot);
 
         if(pushForward) {
             DisplayFeatures();
@@ -51,44 +47,19 @@ public class DataCollector implements ISnapshotSubscriber
         }
     }
 
-    private void UpdateSnapShotFeed(SnapshotFeed snapshot) throws Exception
+    private void UpdateSnapShot(Snapshot snapshot) throws Exception
     {
-        IBar[] bars = snapshot.getWindow();
-        List<Double> values = new ArrayList<>();
-
-        for (IBar bar : bars)
-        {
-            values.add(bar.getClose());
-        }
-
-        if(featureIndices.containsKey(snapshot.id))
-        {
-            UpdateFeatures(values.toArray(new Double[0]), featureIndices.get(snapshot.id));
-            featureCollection.put(snapshot.id, new Double[][]{values.toArray(new Double[0])});
-        }
-        else
-        {
-            int[] indices = GetNewIndicesAndUpdateFeatures(values.size(), values.toArray(new Double[0]));
-            featureIndices.put(snapshot.id, indices);
-            featureCollection.put(snapshot.id, new Double[][]{values.toArray(new Double[0])});
-            featureDescription.put(snapshot.id, snapshot.description);
-        }
-    }
-
-    private void UpdateSnapshotIndicator(SnapshotIndicator snapshot) throws Exception{
-
-        Double[] values = ThingsThatShouldBeEasyInJavaButAreNot.flatten2DDoubleArray(snapshot.getWindow());
-
+        var values = snapshot.getWindowValues();
         if(featureIndices.containsKey(snapshot.id))
         {
             UpdateFeatures(values, featureIndices.get(snapshot.id));
-            featureCollection.put(snapshot.id, snapshot.getWindow());
+            featureCollection.put(snapshot.id, values);
         }
         else
         {
             int[] indices = GetNewIndicesAndUpdateFeatures(values.length, values);
             featureIndices.put(snapshot.id, indices);
-            featureCollection.put(snapshot.id, snapshot.getWindow());
+            featureCollection.put(snapshot.id, values);
             featureDescription.put(snapshot.id, snapshot.description);
         }
     }
@@ -121,7 +92,7 @@ public class DataCollector implements ISnapshotSubscriber
         System.out.print("\nNmb: "+features.size()+"\nFeatures:"+features.toString());
     }
 
-    public Map<UUID, Double[][]> getFeatureCollection() {
+    public Map<UUID, Double[]> getFeatureCollection() {
         return featureCollection;
     }
 

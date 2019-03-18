@@ -1,8 +1,9 @@
 package roots.Snapshots;
 
+import java.util.List;
 import java.util.UUID;
 
-public class Snapshot <T> {
+public abstract class Snapshot <T> {
 
     T[] Window;
     public final UUID id;
@@ -20,4 +21,6 @@ public class Snapshot <T> {
     public T[] getWindow() {
         return Window;
     }
+
+    public abstract Double[] getWindowValues();
 }
