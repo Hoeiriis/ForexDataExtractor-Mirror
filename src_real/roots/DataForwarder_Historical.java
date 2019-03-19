@@ -205,7 +205,7 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
             buildBar.appendVolume(currBar.getVolume());
 
             if (i % nPeriod == 0){
-                buildBar.close = currBar.getTime();
+                buildBar.close = currBar.getClose();
                 returnBars.add(buildBar);
 
                 var nextBar = (IBar) data.get(i+1);
