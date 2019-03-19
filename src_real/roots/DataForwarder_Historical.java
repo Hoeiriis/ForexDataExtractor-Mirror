@@ -1,17 +1,17 @@
 package roots;
 
 import com.dukascopy.api.*;
+import com.dukascopy.api.feed.FeedDescriptor;
 import com.dukascopy.api.feed.IFeedDescriptor;
 import com.dukascopy.api.feed.IFeedListener;
+import com.dukascopy.api.feed.util.TimePeriodAggregationFeedDescriptor;
 import com.opencsv.CSVWriter;
 import com.opencsv.ICSVWriter;
-import com.opencsv.bean.OpencsvUtils;
 import roots.Snapshots.SnapshotTarget;
 import roots.SubWindows.SubscriptionWindow;
 import roots.SubWindows.SubscriptionWindowFeed;
 import roots.SubWindows.SubscriptionWindowIndicator;
 
-import java.io.Console;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static roots.ThingsThatShouldBeEasyInJavaButAreNot.flatten2DDoubleArray;
 
 public class DataForwarder_Historical implements IStrategy, IFeedListener {
 
@@ -47,11 +46,14 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         theCollector.autoSubscribe(this.subscriptionWindowIndicators.toArray(new SubscriptionWindow[0]));
         featureCollection = new ArrayList<>();
         targetRange = 15;
+        targetSnapshot = new SnapshotTarget(UUID.randomUUID(), "Target");
+        System.out.print("Constructor called \n");
     }
 
     @Override
     public void onStart(IContext context) throws JFException
     {
+        System.out.print("onStart Called \n");
         history = context.getHistory();
         var descriptorsToSubscribe = new ArrayList<IFeedDescriptor>();
 
@@ -65,16 +67,15 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
                 descriptorsToSubscribe.add(feedDescriptor);
             }
 
-            // Set history TODO Some bug related to 15 back and actual period
+            // Set history
             ITimedData lastFeedData = history.getFeedData(feedDescriptor, 1);
             IBar bar15back = getBarsNMinutesBack((IBar) lastFeedData, 15).get(0);
-            List<ITimedData> feedDataList = history.getFeedData(feedDescriptor, subWin.LookBackRange, bar15back.getTime(), 0);
-            subWin.setWindow((IBar[]) feedDataList.toArray(new IBar[0]));
+            List<IBar> feedData = getBarsWithNPeriod(feedDescriptor.getPeriod(), subWin.LookBackRange, bar15back.getTime());
+            subWin.setWindow(feedData.toArray(new IBar[0]));
 
             try {
                 subWin.notifySubscribers();
             } catch (Exception e) {
-                e.printStackTrace();
                 System.out.print(e.getMessage());
             }
         }
@@ -110,6 +111,7 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
     public void onFeedData(IFeedDescriptor feedDescriptor, ITimedData feedData)
     {
         try {
+            System.out.print("feedData\n");
             // Get data from 15 minutes ago
             List<IBar> bars15back = getBarsNMinutesBack((IBar) feedData, targetRange);
 
@@ -121,22 +123,23 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
             var features = theCollector.getFeatureCollection();
             featureDescription = theCollector.getFeatureDescription();
 
-            if(featureCollection.size() > 0 && featureCollection.get(0).size()+targetRange != featureDescription.size()) {
+            if(featureCollection.size() > 0 && featureCollection.get(0).size() != featureDescription.size()) {
                 featureCollection = new ArrayList<>();
             }
 
-            if (featureCollection.size() > 0 && featureCollection.size() % 6 == 0){
+            if (featureCollection.size() > 0 && featureCollection.size() % 1 == 0){
                 var stringData = convertToStrings();
                 writeToCSV(stringData, "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test4t.csv");
                 System.out.print("printed \n");
+                featureCollection = new ArrayList<>();
             }
 
             featureCollection.add(features);
             System.out.print(featureCollection.size()+"\n");
 
         } catch (Exception e) {
-            e.printStackTrace();
             System.out.print(e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -168,9 +171,51 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
 
     private List<IBar> getBarsNMinutesBack(IBar currentBar, int minutesBack) throws JFException {
         long startTime =  history.getTimeForNBarsBack(Period.ONE_MIN, currentBar.getTime(), minutesBack);
-        List<IBar> bars = history.getBars(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, startTime, currentBar.getTime());
-        return bars;
+        return history.getBars(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, startTime, currentBar.getTime());
     }
+
+    private List<IBar> getBarsWithNPeriod(Period period, int nBarsToGet, long barTime) throws JFException {
+
+        var returnBars = new ArrayList<IBar>();
+        FeedDescriptor oneMin= new TimePeriodAggregationFeedDescriptor(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK);
+
+        // If period is one minutes, call standard Dukascopy API
+        if(period.getNumOfUnits() == 1){
+            var bars = history.getFeedData(oneMin, nBarsToGet, barTime, 0);
+            for (var bar : bars){
+                returnBars.add((IBar) bar);
+            }
+
+            return returnBars;
+        }
+
+        // Retrieve all OneMin bars for the whole time period
+        int nPeriod = period.getNumOfUnits();
+        int totalBars = nPeriod*(nBarsToGet+1);
+        List<ITimedData> data = history.getFeedData(oneMin, totalBars, barTime, 0);
+
+        // Construct new IBars for each period in the period
+        IBar bar1 = (IBar) data.get(0);
+        Bar buildBar = new Bar(bar1.getOpen(), 0, bar1.getLow(), bar1.getHigh(), bar1.getVolume(), bar1.getTime());
+        for(var i = 1; i < data.size(); i++){
+
+            var currBar = (IBar) data.get(i);
+            buildBar.updateHigh(currBar.getHigh());
+            buildBar.updateLow(currBar.getLow());
+            buildBar.appendVolume(currBar.getVolume());
+
+            if (i % nPeriod == 0){
+                buildBar.close = currBar.getTime();
+                returnBars.add(buildBar);
+
+                var nextBar = (IBar) data.get(i+1);
+                buildBar = new Bar(nextBar.getOpen(), 0, 1000000, 0, 0, nextBar.getTime());
+            }
+        }
+
+        return returnBars;
+    }
+
 
     private Double[] computeTargetRange(List<IBar> targetBars){
         List<Double> targetVals = new ArrayList<>();
