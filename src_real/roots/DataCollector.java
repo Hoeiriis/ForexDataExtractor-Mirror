@@ -93,10 +93,10 @@ public class DataCollector implements ISnapshotSubscriber
     }
 
     public Map<UUID, Double[]> getFeatureCollection() {
-        return featureCollection;
+        return new HashMap<>(featureCollection);
     }
 
     public Map<UUID, String> getFeatureDescription() {
-        return featureDescription;
+        return new HashMap<>(featureDescription);
     }
 }

@@ -15,7 +15,7 @@ public class DataStreamConnector
     private String _userName;
     private String _password;
 
-    private IClient _client;
+    protected IClient _client;
     private final Logger LOGGER = LoggerFactory.getLogger("DataStreamLog");
     private Set<Instrument> _instruments = new HashSet<>();
 
@@ -25,19 +25,20 @@ public class DataStreamConnector
     {
         _userName = userName;
         _password = password;
-        _client = ClientFactory.getDefaultInstance();
+        clientInit();
 
         if (live_connection){
             _jnlpUrl = "live version";
             LOGGER.info("Connection set to live");
         }
 
-        subscribeToInstrument(Instrument.EURUSD);
-        tryToConnect();
         setSystemListener();
+        tryToConnect();
+        subscribeToInstrument(Instrument.EURUSD);
 
         LOGGER.info("StreamConnector ready and running");
     }
+
 
     public DataStreamConnector(String userName, String password) throws Exception
     {
@@ -56,7 +57,11 @@ public class DataStreamConnector
         LOGGER.info("Strategy started. Assigned id:" + strategyId);
     }
 
-    private void setSystemListener() {
+    protected void clientInit() throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+        _client = ClientFactory.getDefaultInstance();
+    }
+
+    protected void setSystemListener() {
         //set the listener that will receive system events
         _client.setSystemListener(new ISystemListener() {
 

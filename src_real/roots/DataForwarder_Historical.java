@@ -15,10 +15,8 @@ import roots.SubWindows.SubscriptionWindowIndicator;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 
 public class DataForwarder_Historical implements IStrategy, IFeedListener {
@@ -31,10 +29,14 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
     private List<Map<UUID, Double[]>> featureCollection;
     private int targetRange;
     private SnapshotTarget targetSnapshot;
+    private SnapshotTarget timeSnapshot;
+    private UUID timestampId;
+    public String savePath;
 
 
-    public DataForwarder_Historical()
+    public DataForwarder_Historical(String outputPath)
     {
+        savePath = outputPath;
         SubscriptionInitializer initializer = new SubscriptionInitializer();
 
         /* Initializing components */
@@ -47,6 +49,8 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         featureCollection = new ArrayList<>();
         targetRange = 15;
         targetSnapshot = new SnapshotTarget(UUID.randomUUID(), "Target");
+        timestampId = UUID.randomUUID();
+        timeSnapshot = new SnapshotTarget(timestampId, "Datetime");
         System.out.print("Constructor called \n");
     }
 
@@ -118,6 +122,9 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
             feedWindowFeeds(feedDescriptor, bars15back.get(0));
             feedWindowIndicators(feedDescriptor, bars15back.get(0));
             targetSnapshot.setWindow(computeTargetRange(bars15back));
+            var tstamp = (double) bars15back.get(0).getTime();
+            timeSnapshot.setWindow((new Double[]{tstamp}));
+            theCollector.NewSnapshot(timeSnapshot);
             theCollector.NewSnapshot(targetSnapshot);
 
             var features = theCollector.getFeatureCollection();
@@ -127,10 +134,8 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
                 featureCollection = new ArrayList<>();
             }
 
-            if (featureCollection.size() > 0 && featureCollection.size() % 1 == 0){
-                var stringData = convertToStrings();
-                writeToCSV(stringData, "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test4t.csv");
-                System.out.print("printed \n");
+            if (featureCollection.size() > 0 && featureCollection.size() % 10 == 0){
+                writeToFile(savePath);
                 featureCollection = new ArrayList<>();
             }
 
@@ -232,8 +237,12 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
 
         List<String> descriptions = new ArrayList<>();
         var featureCol = featureCollection.get(0);
+        descriptions.add(featureDescription.get(timestampId));
 
         for (var key : keys) {
+
+            if(key == timestampId){ continue; }
+
             var size = featureCol.get(key).length;
 
             var desc = featureDescription.get(key);
@@ -250,10 +259,20 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
 
         List<String[]> dataAsString = new ArrayList<>();
         var keys = featureDescription.keySet();
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
 
         for (var featureSet : featureCollection ){
             List<String> featuresStrings = new ArrayList<>();
+            Long timestampLong = featureSet.get(timestampId)[0].longValue();
+
+
+            var timestampDate = new Date(timestampLong);
+            var dateString = format.format(timestampDate);
+            featuresStrings.add(dateString);
+
             for (var key : keys) {
+
+                if(key == timestampId){ continue; }
                 var features = featureSet.get(key);
 
                 for (var entry : features){
@@ -291,6 +310,11 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
         csvWriter.close();
     }
 
+    private void writeToFile(String savePath) throws Exception {
+        var stringData = convertToStrings();
+        writeToCSV(stringData, savePath);
+        System.out.print("printed \n");
+    }
 
     //region non-used onX
 
@@ -316,6 +340,12 @@ public class DataForwarder_Historical implements IStrategy, IFeedListener {
 
     @Override
     public void onStop() throws JFException {
+        try {
+            writeToFile(savePath);
+            featureCollection = new ArrayList<>();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     //endregion
