@@ -1,4 +1,6 @@
 import com.dukascopy.api.*;
+import com.dukascopy.api.feed.FeedDescriptor;
+import com.dukascopy.api.feed.util.TimePeriodAggregationFeedDescriptor;
 import roots.DataCollector;
 import roots.DataForwarder;
 import roots.SubWindows.SubscriptionWindow;
@@ -21,6 +23,7 @@ public class MainClass {
         SubscriptionInitializer initializer = new SubscriptionInitializer();
 
         /* Initializing components */
+
         List<SubscriptionWindowFeed> subWindows = initializer.InitSubscriptionWindowFeeds();
         List<SubscriptionWindowIndicator> indicatorWindows = initializer.InitSubscriptionWindowIndicators();
 
@@ -31,7 +34,7 @@ public class MainClass {
 
         DataStreamConnector Conn = new DataStreamConnector(userName, password, false);
         Conn.subscribeToInstrument(Instrument.EURUSD);
-        DataForwarder forwarder = new DataForwarder(subWindows, indicatorWindows);
+        DataForwarder forwarder = new DataForwarder(subWindows, indicatorWindows, new TimePeriodAggregationFeedDescriptor(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK));
 
         /* Starting */
         Conn.startStrategy(forwarder);

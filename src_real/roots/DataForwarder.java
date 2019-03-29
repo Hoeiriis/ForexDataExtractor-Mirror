@@ -1,62 +1,109 @@
 package roots;
 
 import com.dukascopy.api.*;
+import com.dukascopy.api.feed.FeedDescriptor;
 import com.dukascopy.api.feed.IFeedDescriptor;
 import com.dukascopy.api.feed.IFeedListener;
+import com.dukascopy.api.feed.util.TimePeriodAggregationFeedDescriptor;
 import roots.SubWindows.SubscriptionWindowFeed;
 import com.dukascopy.api.IIndicators;
 import roots.SubWindows.SubscriptionWindowIndicator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DataForwarder implements IStrategy, IFeedListener {
 
     public List<SubscriptionWindowFeed> subscriptionWindowFeeds;
     public List<SubscriptionWindowIndicator> subscriptionWindowIndicators;
-    private IHistory history;
+    public IFeedDescriptor feed;
+    protected IHistory history;
 
 
-    public DataForwarder(List<SubscriptionWindowFeed> subscriptionWindowFeeds, List<SubscriptionWindowIndicator> subscriptionWindowIndicators)
-    {
+    public DataForwarder(List<SubscriptionWindowFeed> subscriptionWindowFeeds, List<SubscriptionWindowIndicator> subscriptionWindowIndicators, IFeedDescriptor feedDescriptor){
         this.subscriptionWindowFeeds = subscriptionWindowFeeds;
         this.subscriptionWindowIndicators = subscriptionWindowIndicators;
+        this.feed = feedDescriptor;
     }
 
     @Override
     public void onStart(IContext context) throws JFException 
     {
         history = context.getHistory();
+        context.subscribeToFeed(feed, this);
+
+        IIndicators indicators = context.getIndicators();
+        ITimedData latestFeedData = history.getFeedData(feed, 1);
+        acquireRecentHistory((IBar) latestFeedData, indicators);
+    }
+
+    protected void acquireRecentHistory(IBar latestFeedData, IIndicators indicators) throws JFException {
 
         for (SubscriptionWindowFeed subWin : subscriptionWindowFeeds)
         {
-            IFeedDescriptor feedDescriptor = subWin.getFeedDescriptor();
-            context.subscribeToFeed(feedDescriptor, this);
-
             // Set history
-            ITimedData lastFeedData = history.getFeedData(feedDescriptor, 0);
-            List<ITimedData> feedDataList = history.getFeedData(feedDescriptor, subWin.LookBackRange, lastFeedData.getTime(), 0);
-            subWin.setWindow(feedDataList.toArray(new IBar[0]));
+            List<IBar> feedData = getBarsWithNPeriod(feed.getPeriod(), subWin.LookBackRange, latestFeedData.getTime());
+            subWin.setWindow(feedData.toArray(new IBar[0]));
 
             try {
                 subWin.notifySubscribers();
             } catch (Exception e) {
-                e.printStackTrace();
+                System.out.print(e.getMessage());
             }
         }
 
-        IIndicators indicators = context.getIndicators();
-
+        // Initialize and acquire information for IndicatorWindows
         for (SubscriptionWindowIndicator subWinInd : subscriptionWindowIndicators){
-            context.subscribeToFeed(subWinInd.getFeedDescriptor(), this);
             subWinInd.setIndicators(indicators);
-            ITimedData lastFeedData = history.getFeedData(subWinInd.getFeedDescriptor(), 0);
 
             try {
-                subWinInd.pushToIndicator((IBar) lastFeedData);
+                subWinInd.pushToIndicator((IBar) latestFeedData);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    protected List<IBar> getBarsWithNPeriod(Period period, int nBarsToGet, long barTime) throws JFException {
+
+        var returnBars = new ArrayList<IBar>();
+        FeedDescriptor oneMin= new TimePeriodAggregationFeedDescriptor(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK);
+
+        // If period is one minutes, call standard Dukascopy API
+        if(period.getNumOfUnits() == 1){
+            var bars = history.getFeedData(oneMin, nBarsToGet, barTime, 0);
+            for (var bar : bars){
+                returnBars.add((IBar) bar);
+            }
+
+            return returnBars;
+        }
+
+        // Retrieve all OneMin bars for the whole time period
+        int nPeriod = period.getNumOfUnits();
+        int totalBars = nPeriod*(nBarsToGet+1);
+        List<ITimedData> data = history.getFeedData(oneMin, totalBars, barTime, 0);
+
+        // Construct new IBars for each period in the period
+        IBar bar1 = (IBar) data.get(0);
+        Bar buildBar = new Bar(bar1.getOpen(), 0, bar1.getLow(), bar1.getHigh(), bar1.getVolume(), bar1.getTime());
+        for(var i = 1; i < data.size(); i++){
+
+            var currBar = (IBar) data.get(i);
+            buildBar.updateHigh(currBar.getHigh());
+            buildBar.updateLow(currBar.getLow());
+            buildBar.appendVolume(currBar.getVolume());
+
+            if (i % nPeriod == 0){
+                buildBar.close = currBar.getClose();
+                returnBars.add(buildBar);
+
+                var nextBar = (IBar) data.get(i+1);
+                buildBar = new Bar(nextBar.getOpen(), 0, 1000000, 0, 0, nextBar.getTime());
+            }
+        }
+
+        return returnBars;
     }
 
     @Override
@@ -66,7 +113,7 @@ public class DataForwarder implements IStrategy, IFeedListener {
         feedWindowIndicators(feedDescriptor, feedData);
     }
 
-    private void feedWindowFeeds(IFeedDescriptor feedDescriptor, ITimedData feedData){
+    protected void feedWindowFeeds(IFeedDescriptor feedDescriptor, ITimedData feedData){
 
         for (SubscriptionWindowFeed w : subscriptionWindowFeeds) {
             if (feedDescriptor.equals(w.FeedDescriptor)) {
@@ -78,8 +125,7 @@ public class DataForwarder implements IStrategy, IFeedListener {
             }
         }
     }
-
-    private void feedWindowIndicators(IFeedDescriptor feedDescriptor, ITimedData feedData){
+    protected void feedWindowIndicators(IFeedDescriptor feedDescriptor, ITimedData feedData){
 
         for (SubscriptionWindowIndicator w : subscriptionWindowIndicators) {
             if (feedDescriptor.equals(w.getFeedDescriptor())) {
