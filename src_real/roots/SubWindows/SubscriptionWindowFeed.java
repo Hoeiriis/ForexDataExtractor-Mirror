@@ -55,4 +55,5 @@ public class SubscriptionWindowFeed extends SubscriptionWindow<IBar>
         snapshot_base.setWindow(this.getWindow());
         return snapshot_base;
     }
+
 }

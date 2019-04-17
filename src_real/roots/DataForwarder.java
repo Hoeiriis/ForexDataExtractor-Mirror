@@ -116,12 +116,11 @@ public class DataForwarder implements IStrategy, IFeedListener {
     protected void feedWindowFeeds(IFeedDescriptor feedDescriptor, ITimedData feedData){
 
         for (SubscriptionWindowFeed w : subscriptionWindowFeeds) {
-            if (feedDescriptor.equals(w.FeedDescriptor)) {
-                try {
-                    w.pushToWindow((IBar) feedData);
-                } catch (Exception e) {
-                    System.out.print(String.format("exceptiuones: %s\n", e.toString()));
-                }
+            try {
+                var bars = getBarsWithNPeriod(w.getFeedDescriptor().getPeriod(), 1, feedData.getTime());
+                w.pushToWindow(bars.get(0));
+            } catch (Exception e) {
+                System.out.print(String.format("exceptiuones: %s\n", e.toString()));
             }
         }
     }
