@@ -1,21 +1,19 @@
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.*;
 import roots.DataCollector;
 import roots.Snapshots.IndicatorType;
 import roots.Snapshots.SnapshotIndicator;
 
-import java.util.Map;
 import java.util.UUID;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DataCollectorTest
 {
     private DataCollector theCollector;
     private UUID[] dataPusher;
     private int pushNumber;
 
-    @BeforeClass
+    @BeforeAll
     public void globalSetUp()
     {
         UUID id0 = UUID.randomUUID();
@@ -26,7 +24,7 @@ public class DataCollectorTest
         dataPusher = new UUID[] {id0, id1, id2, id3, id4};
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp()
     {
         theCollector = new DataCollector(true);
@@ -44,8 +42,8 @@ public class DataCollectorTest
         pushData(1, 1);
 
         // Assert
-        Assert.assertEquals(theCollector.features.get(0), expected1);
-        Assert.assertEquals(theCollector.features.get(1), expected2);
+        assertEquals(theCollector.features.get(0).doubleValue(), expected1);
+        assertEquals(theCollector.features.get(1).doubleValue(), expected2);
     }
 
     @Test
@@ -63,12 +61,12 @@ public class DataCollectorTest
         pushData(3, 1);
 
         // Assert
-        Assert.assertEquals(theCollector.features.get(0), expected1);
-        Assert.assertEquals(theCollector.features.get(1), expected2);
-        Assert.assertEquals(theCollector.features.get(2), expected3);
-        Assert.assertEquals(theCollector.features.get(3), expected4);
-        Assert.assertEquals(theCollector.features.get(4), expected5);
-        Assert.assertEquals(theCollector.features.get(5), expected6);
+        assertEquals(theCollector.features.get(0).doubleValue(), expected1);
+        assertEquals(theCollector.features.get(1).doubleValue(), expected2);
+        assertEquals(theCollector.features.get(2).doubleValue(), expected3);
+        assertEquals(theCollector.features.get(3).doubleValue(), expected4);
+        assertEquals(theCollector.features.get(4).doubleValue(), expected5);
+        assertEquals(theCollector.features.get(5).doubleValue(), expected6);
     }
 
     @Test
@@ -82,8 +80,8 @@ public class DataCollectorTest
         pushData(1, 2);
 
         // Assert
-        Assert.assertEquals(theCollector.features.get(0), expected1);
-        Assert.assertEquals(theCollector.features.get(1), expected2);
+        assertEquals(theCollector.features.get(0).doubleValue(), expected1);
+        assertEquals(theCollector.features.get(1).doubleValue(), expected2);
     }
 
     @Test
@@ -101,12 +99,12 @@ public class DataCollectorTest
         pushData(3, 4);
 
         // Assert
-        Assert.assertEquals(theCollector.features.get(0), expected1);
-        Assert.assertEquals(theCollector.features.get(1), expected2);
-        Assert.assertEquals(theCollector.features.get(2), expected3);
-        Assert.assertEquals(theCollector.features.get(3), expected4);
-        Assert.assertEquals(theCollector.features.get(4), expected5);
-        Assert.assertEquals(theCollector.features.get(5), expected6);
+        assertEquals(theCollector.features.get(0).doubleValue(), expected1);
+        assertEquals(theCollector.features.get(1).doubleValue(), expected2);
+        assertEquals(theCollector.features.get(2).doubleValue(), expected3);
+        assertEquals(theCollector.features.get(3).doubleValue(), expected4);
+        assertEquals(theCollector.features.get(4).doubleValue(), expected5);
+        assertEquals(theCollector.features.get(5).doubleValue(), expected6);
     }
 
     public void pushData(int amount, int repeats) throws Exception {

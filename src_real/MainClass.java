@@ -12,9 +12,6 @@ import java.util.List;
 
 public class MainClass {
 
-    public MainClass() throws Exception {
-    }
-
     public static void main(String [] args) throws Exception {
 
         String password = "DfNED";

@@ -1,10 +1,6 @@
 package roots;
 
-import com.dukascopy.api.IBar;
 import roots.Snapshots.Snapshot;
-import roots.Snapshots.SnapshotFeed;
-import roots.Snapshots.SnapshotIndicator;
-import roots.Snapshots.SnapshotTarget;
 import roots.SubWindows.ISnapshotSubscriber;
 import roots.SubWindows.SubscriptionWindow;
 

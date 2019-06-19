@@ -4,10 +4,6 @@ import com.dukascopy.api.OfferSide;
 import com.dukascopy.api.Period;
 import com.dukascopy.api.feed.FeedDescriptor;
 import com.dukascopy.api.feed.util.TimePeriodAggregationFeedDescriptor;
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import roots.Snapshots.Snapshot;
 import roots.Snapshots.SnapshotFeed;
 import roots.SubWindows.ISnapshotSubscriber;
@@ -17,6 +13,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SubscriptionWindowFeedTest
 {
     private SubscriptionWindowFeed testWindow;
@@ -38,7 +38,7 @@ public class SubscriptionWindowFeedTest
         return !truths.contains(false);
     }
 
-    @BeforeClass
+    @BeforeAll
     public void globalSetUp(){
         feed = new TimePeriodAggregationFeedDescriptor(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK);
         lookback = 30;
@@ -59,7 +59,7 @@ public class SubscriptionWindowFeedTest
         }
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp()
     {
         // 1 min Bar, 30 min Lookback, Price/Volume
@@ -86,12 +86,12 @@ public class SubscriptionWindowFeedTest
         IBar outBar = wi.get(0)[0];
 
         // Assert
-        Assert.assertEquals(outBar.getOpen(), open);
-        Assert.assertEquals(outBar.getClose(), close);
-        Assert.assertEquals(outBar.getLow(), low);
-        Assert.assertEquals(outBar.getHigh(), high);
-        Assert.assertEquals(outBar.getVolume(), vol);
-        Assert.assertEquals(outBar.getTime(), time);
+        assertEquals(outBar.getOpen(), open);
+        assertEquals(outBar.getClose(), close);
+        assertEquals(outBar.getLow(), low);
+        assertEquals(outBar.getHigh(), high);
+        assertEquals(outBar.getVolume(), vol);
+        assertEquals(outBar.getTime(), time);
     }
 
     @Test
@@ -116,8 +116,8 @@ public class SubscriptionWindowFeedTest
         for (int i = 0 ; i < latestLength; i++)
         {
             IBar outBar = latestReceived[i];
-            Assert.assertEquals(outBar.getLow(), (double)lows.get(latestLength-(i+1)));
-            Assert.assertTrue(BarIsEq(outBar, feedDatas.get(latestLength-(i+1))));
+            assertEquals(outBar.getLow(), (double)lows.get(latestLength-(i+1)));
+            assertTrue(BarIsEq(outBar, feedDatas.get(latestLength-(i+1))));
         }
     }
 
@@ -136,8 +136,8 @@ public class SubscriptionWindowFeedTest
 
         int latestLength = latestReceived.length;
         int secLatestLength = secLatestReceived.length;
-        Assert.assertEquals(latestLength, lookback);
-        Assert.assertEquals(latestLength, secLatestLength);
+        assertEquals(latestLength, lookback);
+        assertEquals(latestLength, secLatestLength);
     }
 
     @Test
@@ -154,9 +154,9 @@ public class SubscriptionWindowFeedTest
         List<IBar> latestList = new ArrayList<>(Arrays.asList(latestReceived));
 
 
-        Assert.assertTrue(BarIsEq(feedDatas.get(feedDatas.size()-1), latestReceived[0]));
-        Assert.assertTrue(!latestList.contains(feedDatas.get(0)));
-        Assert.assertTrue(BarIsEq(feedDatas.get(5), latestReceived[feedDatas.size()-6]));
+        assertTrue(BarIsEq(feedDatas.get(feedDatas.size()-1), latestReceived[0]));
+        assertTrue(!latestList.contains(feedDatas.get(0)));
+        assertTrue(BarIsEq(feedDatas.get(5), latestReceived[feedDatas.size()-6]));
     }
 }
 
