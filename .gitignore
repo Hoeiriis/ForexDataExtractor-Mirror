@@ -1,4 +1,4 @@
-targets/**
-.idea/**
-logs/**
-out/**
+targets/
+.idea/
+logs/
+out/
