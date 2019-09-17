@@ -16,15 +16,16 @@ public class Main2 {
 
     public static void main(String [] args) throws Exception {
 
-        String password = "tEvSP";
-        String userName = "DEMO2tEvSP";
-        String savePath = "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test8semireal.csv";
+        String password = "jbCoU";
+        String userName = "DEMO2jbCoU";
+        //String savePath = "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test8semireal.csv";
+        String savePath = "/home/happysun/data/dukascopy/weeks/";
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+1"));
 
         Date dateFrom = dateFormat.parse("2019/03/04 08:00:00");
-        Date dateTo = dateFormat.parse("2019/03/04 21:00:00");
+        Date dateTo = dateFormat.parse("2019/03/08 21:00:00");
 
         /* Initializing components */
         SubscriptionInitializer initializer = new SubscriptionInitializer();

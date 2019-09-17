@@ -31,6 +31,7 @@ public class SocketClient implements CommunicationClient {
         clientSocket.close();
     }
 
+    /*
     protected void HandleResponses(){
 
         while(in.hasNextLine()){
@@ -39,7 +40,7 @@ public class SocketClient implements CommunicationClient {
                 messageHandler.HandleMessage(line);
             }
         }
-    }
+    }*/
 }
 
 class SocketCommunicator extends Thread {

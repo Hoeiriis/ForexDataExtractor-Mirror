@@ -28,7 +28,9 @@ public class DataForwarder_Historical extends DataForwarder {
     public String savePath;
 
 
-    public DataForwarder_Historical(List<SubscriptionWindowFeed> subscriptionWindowFeeds, List<SubscriptionWindowIndicator> subscriptionWindowIndicators, IFeedDescriptor feedDescriptor, int targetMin, String outputPath)
+    public DataForwarder_Historical(List<SubscriptionWindowFeed> subscriptionWindowFeeds,
+                                    List<SubscriptionWindowIndicator> subscriptionWindowIndicators,
+                                    IFeedDescriptor feedDescriptor, int targetMin, String outputPath)
     {
         super(subscriptionWindowFeeds, subscriptionWindowIndicators, feedDescriptor);
 
@@ -68,6 +70,7 @@ public class DataForwarder_Historical extends DataForwarder {
             // Get data from 15 minutes ago
             List<IBar> bars15back = getBarsNMinutesBack((IBar) feedData, targetRange);
 
+            // Feed the different data windows
             feedWindowFeeds(feedDescriptor, bars15back.get(0));
             feedWindowIndicators(feedDescriptor, bars15back.get(0));
             targetSnapshot.setWindow(computeTargetRange(bars15back));
@@ -76,15 +79,19 @@ public class DataForwarder_Historical extends DataForwarder {
             theCollector.NewSnapshot(timeSnapshot);
             theCollector.NewSnapshot(targetSnapshot);
 
+            // Get features
             var features = theCollector.getFeatureCollection();
             featureDescription = theCollector.getFeatureDescription();
 
+            // If all data is present, write to file
             if(featureCollection.size() > 0 && featureCollection.get(0).size() != featureDescription.size()) {
                 featureCollection = new ArrayList<>();
             }
 
             if (featureCollection.size() > 0 && featureCollection.size() % 10 == 0){
-                writeToFile(savePath);
+
+
+                writeToFile(savePath+"wat.csv");
                 featureCollection = new ArrayList<>();
             }
 
@@ -96,7 +103,6 @@ public class DataForwarder_Historical extends DataForwarder {
             e.printStackTrace();
         }
     }
-
 
     private List<IBar> getBarsNMinutesBack(IBar currentBar, int minutesBack) throws JFException {
         long startTime =  history.getTimeForNBarsBack(Period.ONE_MIN, currentBar.getTime(), minutesBack);
@@ -111,6 +117,7 @@ public class DataForwarder_Historical extends DataForwarder {
 
         return targetVals.toArray(new Double[]{});
     }
+
     private List<String> createDescription() {
 
         var keys = featureDescription.keySet();
@@ -120,10 +127,12 @@ public class DataForwarder_Historical extends DataForwarder {
         descriptions.add(featureDescription.get(timestampId));
 
         for (var key : keys) {
-
             if(key == timestampId){ continue; }
 
-            var size = featureCol.get(key).length;
+            var size = 2;
+            if(featureDescription.get(key).equals("Target")){
+                size = featureCol.get(key).length;
+            }
 
             var desc = featureDescription.get(key);
             for (int i = 0; i < size; i++) {
@@ -133,6 +142,7 @@ public class DataForwarder_Historical extends DataForwarder {
 
         return descriptions;
     }
+
     private List<String[]> convertToStrings(){
 
         List<String[]> dataAsString = new ArrayList<>();
@@ -143,7 +153,6 @@ public class DataForwarder_Historical extends DataForwarder {
             List<String> featuresStrings = new ArrayList<>();
             Long timestampLong = featureSet.get(timestampId)[0].longValue();
 
-
             var timestampDate = new Date(timestampLong);
             var dateString = format.format(timestampDate);
             featuresStrings.add(dateString);
@@ -153,16 +162,27 @@ public class DataForwarder_Historical extends DataForwarder {
                 if(key == timestampId){ continue; }
                 var features = featureSet.get(key);
 
+                int samples = 2;
+                if(featureDescription.get(key).equals("Target")){
+                    samples = features.length;
+                }
+
                 for (var entry : features){
+
+                    if(samples < 1){
+                        break;
+                    }
+
                     featuresStrings.add(entry.toString());
+                    samples = samples-1;
                 }
             }
-
             dataAsString.add(featuresStrings.toArray(new String[]{}));
         }
 
         return dataAsString;
     }
+
     private void writeToCSV(List<String[]> data,  String FilePath) throws Exception{
         Writer writer;
         File f = new File(FilePath);
@@ -189,7 +209,6 @@ public class DataForwarder_Historical extends DataForwarder {
     private void writeToFile(String savePath) throws Exception {
         var stringData = convertToStrings();
         writeToCSV(stringData, savePath);
-        System.out.print("printed \n");
     }
 
     @Override
