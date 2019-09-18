@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 
 
@@ -21,8 +22,6 @@ public class DataForwarder_Historical extends DataForwarder {
     private DataCollector theCollector;
     private Map<UUID, String> featureDescription;
     private List<Map<UUID, Double[]>> featureCollection;
-    private int targetRange;
-    private SnapshotTarget targetSnapshot;
     private SnapshotTarget timeSnapshot;
     private UUID timestampId;
     public String savePath;
@@ -41,9 +40,6 @@ public class DataForwarder_Historical extends DataForwarder {
         theCollector = new DataCollector(false);
         theCollector.autoSubscribe(this.subscriptionWindowFeeds.toArray(new SubscriptionWindow[0]));
         theCollector.autoSubscribe(this.subscriptionWindowIndicators.toArray(new SubscriptionWindow[0]));
-
-        targetRange = targetMin;
-        targetSnapshot = new SnapshotTarget(UUID.randomUUID(), "Target");
 
         outPath = outputPath;
         timestampId = UUID.randomUUID();
@@ -64,18 +60,24 @@ public class DataForwarder_Historical extends DataForwarder {
         IIndicators indicators = context.getIndicators();
         ITimedData latestFeedData = history.getFeedData(feed, 1);
         var bar15back = getBarsNMinutesBack((IBar) latestFeedData, 15).get(0);
-        acquireRecentHistory(bar15back, indicators);
+        acquireRecentHistory((IBar)latestFeedData, indicators);
     }
 
     @Override
     public void onFeedData(IFeedDescriptor feedDescriptor, ITimedData feedData)
     {
         try {
+            SimpleDateFormat simpleDateformat = new SimpleDateFormat("E");
+            String dayOfWeek = simpleDateformat.format(new Date(feedData.getTime()));
+            if(dayOfWeek.equalsIgnoreCase("Sun")){
+                return;
+            }
+
             // Get data from 15 minutes ago
-            List<IBar> bars15back = getBarsNMinutesBack((IBar) feedData, targetRange);
+            // List<IBar> bars15back = getBarsNMinutesBack((IBar) feedData, targetRange); Old data config
 
             // Feed data to data windows
-            FeedDataWindows(feedDescriptor, bars15back);
+            FeedDataWindows(feedDescriptor, (IBar) feedData);
 
             // Get features
             var features = theCollector.getFeatureCollection();
@@ -86,9 +88,9 @@ public class DataForwarder_Historical extends DataForwarder {
                 featureCollection = new ArrayList<>();
             }
 
-            if (featureCollection.size() > 0 && featureCollection.size() % 10 == 0){
+            if (featureCollection.size() > 0 && featureCollection.size() % 100 == 0){
                 // Check the week, if a 4 week period has passed, change the out file
-                CheckWeek(bars15back.get(0).getTime());
+                CheckWeek(feedData.getTime());
                 writeToFile(savePath);
                 featureCollection = new ArrayList<>();
             }
@@ -210,15 +212,13 @@ public class DataForwarder_Historical extends DataForwarder {
         writeToCSV(stringData, savePath);
     }
 
-    private void FeedDataWindows(IFeedDescriptor feedDescriptor, List<IBar> barData) throws Exception {
+    private void FeedDataWindows(IFeedDescriptor feedDescriptor,IBar barData) throws Exception {
         // Feed the different data windows
-        feedWindowFeeds(feedDescriptor, barData.get(0));
-        feedWindowIndicators(feedDescriptor, barData.get(0));
-        targetSnapshot.setWindow(computeTargetRange(barData));
-        var tstamp = (double) barData.get(0).getTime();
+        feedWindowFeeds(feedDescriptor, barData);
+        feedWindowIndicators(feedDescriptor, barData);
+        var tstamp = (double) barData.getTime();
         timeSnapshot.setWindow((new Double[]{tstamp}));
         theCollector.NewSnapshot(timeSnapshot);
-        theCollector.NewSnapshot(targetSnapshot);
     }
 
 
@@ -233,7 +233,7 @@ public class DataForwarder_Historical extends DataForwarder {
             weekCount += 1;
             current_week = week_of_year;
 
-            if(weekCount > 4){
+            if(weekCount > 3){
                 savePath = String.format("%s%d_4weeks_%.10s", outPath, file_counter, date.toString());
                 weekCount = 1;
                 file_counter += 1;

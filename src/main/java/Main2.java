@@ -18,14 +18,14 @@ public class Main2 {
 
         String password = "jbCoU";
         String userName = "DEMO2jbCoU";
-        //String savePath = "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test8semireal.csv";
-        String savePath = "/home/happysun/data/dukascopy/weeks/";
+        String savePath = "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test/";
+        //String savePath = "/home/happysun/data/dukascopy/weeks/";
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+1"));
+        //dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+1"));
 
-        Date dateFrom = dateFormat.parse("2018/01/01 00:00:00");
-        Date dateTo = dateFormat.parse("2018/03/30 00:00:00");
+        Date dateFrom = dateFormat.parse("2017/12/01 00:00:00");
+        Date dateTo = dateFormat.parse("2018/02/28 00:00:00");
 
         System.out.println("Start date: "+dateFrom);
         System.out.println("End date: "+dateTo);
@@ -35,7 +35,7 @@ public class Main2 {
         SubscriptionInitializer initializer = new SubscriptionInitializer();
         List<SubscriptionWindowFeed> subWindows = initializer.InitSubscriptionWindowFeeds();
         List<SubscriptionWindowIndicator> indicatorWindows = initializer.InitSubscriptionWindowIndicators();
-        FeedDescriptor feed = new TimePeriodAggregationFeedDescriptor(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK);
+        FeedDescriptor feed = new TimePeriodAggregationFeedDescriptor(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, Filter.WEEKENDS);
 
         DataForwarder_Historical forwarder = new DataForwarder_Historical(subWindows, indicatorWindows, feed, 15, savePath);
 
