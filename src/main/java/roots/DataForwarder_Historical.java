@@ -26,7 +26,8 @@ public class DataForwarder_Historical extends DataForwarder {
     private SnapshotTarget timeSnapshot;
     private UUID timestampId;
     public String savePath;
-
+    private String outPath;
+    private int file_counter;
 
     public DataForwarder_Historical(List<SubscriptionWindowFeed> subscriptionWindowFeeds,
                                     List<SubscriptionWindowIndicator> subscriptionWindowIndicators,
@@ -44,10 +45,14 @@ public class DataForwarder_Historical extends DataForwarder {
         targetRange = targetMin;
         targetSnapshot = new SnapshotTarget(UUID.randomUUID(), "Target");
 
-        savePath = outputPath;
+        outPath = outputPath;
         timestampId = UUID.randomUUID();
         timeSnapshot = new SnapshotTarget(timestampId, "Datetime");
         System.out.print("Constructor called \n");
+        current_week = 0;
+        weekCount = 10;
+        file_counter = 1;
+
     }
 
     @Override
@@ -66,18 +71,11 @@ public class DataForwarder_Historical extends DataForwarder {
     public void onFeedData(IFeedDescriptor feedDescriptor, ITimedData feedData)
     {
         try {
-            System.out.print("feedData\n");
             // Get data from 15 minutes ago
             List<IBar> bars15back = getBarsNMinutesBack((IBar) feedData, targetRange);
 
-            // Feed the different data windows
-            feedWindowFeeds(feedDescriptor, bars15back.get(0));
-            feedWindowIndicators(feedDescriptor, bars15back.get(0));
-            targetSnapshot.setWindow(computeTargetRange(bars15back));
-            var tstamp = (double) bars15back.get(0).getTime();
-            timeSnapshot.setWindow((new Double[]{tstamp}));
-            theCollector.NewSnapshot(timeSnapshot);
-            theCollector.NewSnapshot(targetSnapshot);
+            // Feed data to data windows
+            FeedDataWindows(feedDescriptor, bars15back);
 
             // Get features
             var features = theCollector.getFeatureCollection();
@@ -89,18 +87,18 @@ public class DataForwarder_Historical extends DataForwarder {
             }
 
             if (featureCollection.size() > 0 && featureCollection.size() % 10 == 0){
-
-
-                writeToFile(savePath+"wat.csv");
+                // Check the week, if a 4 week period has passed, change the out file
+                CheckWeek(bars15back.get(0).getTime());
+                writeToFile(savePath);
                 featureCollection = new ArrayList<>();
             }
 
             featureCollection.add(features);
-            System.out.print(featureCollection.size()+"\n");
 
         } catch (Exception e) {
             System.out.print(e.getMessage());
             e.printStackTrace();
+
         }
     }
 
@@ -206,9 +204,42 @@ public class DataForwarder_Historical extends DataForwarder {
         csvWriter.writeAll(data);
         csvWriter.close();
     }
+
     private void writeToFile(String savePath) throws Exception {
         var stringData = convertToStrings();
         writeToCSV(stringData, savePath);
+    }
+
+    private void FeedDataWindows(IFeedDescriptor feedDescriptor, List<IBar> barData) throws Exception {
+        // Feed the different data windows
+        feedWindowFeeds(feedDescriptor, barData.get(0));
+        feedWindowIndicators(feedDescriptor, barData.get(0));
+        targetSnapshot.setWindow(computeTargetRange(barData));
+        var tstamp = (double) barData.get(0).getTime();
+        timeSnapshot.setWindow((new Double[]{tstamp}));
+        theCollector.NewSnapshot(timeSnapshot);
+        theCollector.NewSnapshot(targetSnapshot);
+    }
+
+
+    private int weekCount;
+    private int current_week;
+
+    private void CheckWeek(long msTime){
+        Date date = new Date(msTime);
+        int week_of_year = Integer.parseInt(new SimpleDateFormat("w").format(date));
+        if(current_week != week_of_year){
+
+            weekCount += 1;
+            current_week = week_of_year;
+
+            if(weekCount > 4){
+                savePath = String.format("%s%d_4weeks_%.10s", outPath, file_counter, date.toString());
+                weekCount = 1;
+                file_counter += 1;
+            }
+
+        }
     }
 
     @Override

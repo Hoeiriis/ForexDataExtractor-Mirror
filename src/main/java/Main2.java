@@ -24,10 +24,14 @@ public class Main2 {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+1"));
 
-        Date dateFrom = dateFormat.parse("2019/03/04 08:00:00");
-        Date dateTo = dateFormat.parse("2019/03/08 21:00:00");
+        Date dateFrom = dateFormat.parse("2018/01/01 00:00:00");
+        Date dateTo = dateFormat.parse("2018/03/30 00:00:00");
+
+        System.out.println("Start date: "+dateFrom);
+        System.out.println("End date: "+dateTo);
 
         /* Initializing components */
+        System.out.println("Initializing components");
         SubscriptionInitializer initializer = new SubscriptionInitializer();
         List<SubscriptionWindowFeed> subWindows = initializer.InitSubscriptionWindowFeeds();
         List<SubscriptionWindowIndicator> indicatorWindows = initializer.InitSubscriptionWindowIndicators();
@@ -36,10 +40,14 @@ public class Main2 {
         DataForwarder_Historical forwarder = new DataForwarder_Historical(subWindows, indicatorWindows, feed, 15, savePath);
 
         // Using Historical connector
+        System.out.println("Connecting to stream");
         HistoricalStreamConnector Conn = new HistoricalStreamConnector(userName, password);
+
+        System.out.println("Subscribing to instruments");
         Conn.subscribeToInstrument(Instrument.EURUSD);
 
         /* Starting */
+        System.out.println("Starting historical DataForwarder");
         Conn.startStrategy(forwarder, dateFrom, dateTo);
     }
 }

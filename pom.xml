@@ -52,21 +52,6 @@
             <version>3.4.13</version>
         </dependency>
         <dependency>
-            <groupId>com.dukascopy.api</groupId>
-            <artifactId>JForex-API</artifactId>
-            <!-- find the latest available version here:
-                http://www.dukascopy.com/client/jforexlib/publicrepo/com/dukascopy/api/JForex-API/
-            -->
-            <version>2.13.62</version>
-            <classifier>sources</classifier>
-        </dependency>
-        <dependency>
-            <groupId>com.dukascopy.api</groupId>
-            <artifactId>JForex-API</artifactId>
-            <version>2.13.62</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.13</version>
@@ -80,7 +65,6 @@
             <groupId>com.dukascopy.api</groupId>
             <artifactId>JForex-API</artifactId>
             <version>2.13.62</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
     <build>
@@ -93,6 +77,29 @@
                     <source>10</source>
                     <target>10</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>Main2</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
