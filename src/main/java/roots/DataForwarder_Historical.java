@@ -27,6 +27,9 @@ public class DataForwarder_Historical extends DataForwarder {
     public String savePath;
     private String outPath;
     private int file_counter;
+    private int targetRange;
+    private SnapshotTarget targetSnapshot;
+
 
     public DataForwarder_Historical(List<SubscriptionWindowFeed> subscriptionWindowFeeds,
                                     List<SubscriptionWindowIndicator> subscriptionWindowIndicators,
@@ -41,6 +44,9 @@ public class DataForwarder_Historical extends DataForwarder {
         theCollector.autoSubscribe(this.subscriptionWindowFeeds.toArray(new SubscriptionWindow[0]));
         theCollector.autoSubscribe(this.subscriptionWindowIndicators.toArray(new SubscriptionWindow[0]));
 
+        targetRange = targetMin;
+        targetSnapshot = new SnapshotTarget(UUID.randomUUID(), "Target");
+
         outPath = outputPath;
         timestampId = UUID.randomUUID();
         timeSnapshot = new SnapshotTarget(timestampId, "Datetime");
@@ -49,35 +55,42 @@ public class DataForwarder_Historical extends DataForwarder {
         weekCount = 10;
         file_counter = 1;
 
+
     }
 
     @Override
     public void onStart(IContext context) throws JFException
     {
+
         history = context.getHistory();
         context.subscribeToFeed(feed, this);
 
         IIndicators indicators = context.getIndicators();
         ITimedData latestFeedData = history.getFeedData(feed, 1);
-        var bar15back = getBarsNMinutesBack((IBar) latestFeedData, 15).get(0);
-        acquireRecentHistory((IBar)latestFeedData, indicators);
+        var bar15back = getBarsNMinutesBack((IBar) latestFeedData, targetRange).get(0);
+        acquireRecentHistory(bar15back, indicators);
     }
 
     @Override
     public void onFeedData(IFeedDescriptor feedDescriptor, ITimedData feedData)
     {
         try {
+            // Get data from 15 minutes ago
+            List<IBar> bars15back = getBarsNMinutesBack((IBar) feedData, targetRange); //Old data config
+
+            // Return if weekend
+            if (bars15back.size() == 0){
+                return;
+            }
+
             SimpleDateFormat simpleDateformat = new SimpleDateFormat("E");
-            String dayOfWeek = simpleDateformat.format(new Date(feedData.getTime()));
+            String dayOfWeek = simpleDateformat.format(new Date(bars15back.get(0).getTime()));
             if(dayOfWeek.equalsIgnoreCase("Sun")){
                 return;
             }
 
-            // Get data from 15 minutes ago
-            // List<IBar> bars15back = getBarsNMinutesBack((IBar) feedData, targetRange); Old data config
-
             // Feed data to data windows
-            FeedDataWindows(feedDescriptor, (IBar) feedData);
+            FeedDataWindows(feedDescriptor, bars15back);
 
             // Get features
             var features = theCollector.getFeatureCollection();
@@ -90,7 +103,7 @@ public class DataForwarder_Historical extends DataForwarder {
 
             if (featureCollection.size() > 0 && featureCollection.size() % 100 == 0){
                 // Check the week, if a 4 week period has passed, change the out file
-                CheckWeek(feedData.getTime());
+                CheckWeek(bars15back.get(0).getTime());
                 writeToFile(savePath);
                 featureCollection = new ArrayList<>();
             }
@@ -106,7 +119,7 @@ public class DataForwarder_Historical extends DataForwarder {
 
     private List<IBar> getBarsNMinutesBack(IBar currentBar, int minutesBack) throws JFException {
         long startTime =  history.getTimeForNBarsBack(Period.ONE_MIN, currentBar.getTime(), minutesBack);
-        return history.getBars(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, startTime, currentBar.getTime());
+        return history.getBars(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, Filter.WEEKENDS, startTime, currentBar.getTime());
     }
 
     private Double[] computeTargetRange(List<IBar> targetBars){
@@ -129,7 +142,7 @@ public class DataForwarder_Historical extends DataForwarder {
         for (var key : keys) {
             if(key == timestampId){ continue; }
 
-            var size = 2;
+            var size = 1;
             if(featureDescription.get(key).equals("Target")){
                 size = featureCol.get(key).length;
             }
@@ -162,7 +175,7 @@ public class DataForwarder_Historical extends DataForwarder {
                 if(key == timestampId){ continue; }
                 var features = featureSet.get(key);
 
-                int samples = 2;
+                int samples = 1;
                 if(featureDescription.get(key).equals("Target")){
                     samples = features.length;
                 }
@@ -212,13 +225,22 @@ public class DataForwarder_Historical extends DataForwarder {
         writeToCSV(stringData, savePath);
     }
 
-    private void FeedDataWindows(IFeedDescriptor feedDescriptor,IBar barData) throws Exception {
+    private void FeedDataWindows(IFeedDescriptor feedDescriptor, List<IBar> barData) throws Exception {
         // Feed the different data windows
-        feedWindowFeeds(feedDescriptor, barData);
-        feedWindowIndicators(feedDescriptor, barData);
-        var tstamp = (double) barData.getTime();
+
+        // Compute target
+        targetSnapshot.setWindow(computeTargetRange(barData));
+
+        // Feed the other windows
+        var bar15back = barData.get(0);
+        feedWindowFeeds(feedDescriptor, bar15back);
+        feedWindowIndicators(feedDescriptor, bar15back);
+
+        // Set time and invoke NewSnapshot for time and target
+        var tstamp = (double) bar15back.getTime();
         timeSnapshot.setWindow((new Double[]{tstamp}));
         theCollector.NewSnapshot(timeSnapshot);
+        theCollector.NewSnapshot(targetSnapshot);
     }
 
 
