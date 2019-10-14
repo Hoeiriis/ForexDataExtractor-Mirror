@@ -142,10 +142,10 @@ public class DataForwarder_Historical extends DataForwarder {
         for (var key : keys) {
             if(key == timestampId){ continue; }
 
-            var size = 1;
-            if(featureDescription.get(key).equals("Target")){
-                size = featureCol.get(key).length;
-            }
+            var size = featureCol.get(key).length;;
+            //if(featureDescription.get(key).equals("Target") | featureDescription.get(key).equals("feed15min_") | featureDescription.get(key).equals("feed5min_")){
+            //    size = featureCol.get(key).length;
+            //}
 
             var desc = featureDescription.get(key);
             for (int i = 0; i < size; i++) {
@@ -175,10 +175,10 @@ public class DataForwarder_Historical extends DataForwarder {
                 if(key == timestampId){ continue; }
                 var features = featureSet.get(key);
 
-                int samples = 1;
-                if(featureDescription.get(key).equals("Target")){
-                    samples = features.length;
-                }
+                int samples = features.length;
+                //if(featureDescription.get(key).equals("Target") | featureDescription.get(key).equals("feed15min_") | featureDescription.get(key).equals("feed5min_")){
+                //    samples = features.length;
+                //}
 
                 for (var entry : features){
 
@@ -256,7 +256,7 @@ public class DataForwarder_Historical extends DataForwarder {
             current_week = week_of_year;
 
             if(weekCount > 3){
-                savePath = String.format("%s%d_4weeks_%.10s", outPath, file_counter, date.toString());
+                savePath = String.format("%s%d_4weeks_%.10s.csv", outPath, file_counter, date.toString());
                 weekCount = 1;
                 file_counter += 1;
             }

@@ -16,16 +16,17 @@ public class Main2 {
 
     public static void main(String [] args) throws Exception {
 
-        String password = "jbCoU";
-        String userName = "DEMO2jbCoU";
-        String savePath = "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test/";
-        //String savePath = "/home/happysun/data/dukascopy/weeks/";
+        String password = "cPSNr";
+        String userName = "DEMO2cPSNr";
+        //String savePath = "/home/obliviousmonkey/CoreView/WhatYaWannaKnow/IceRoot_Output_Data/test/";
+        String savePath = "/home/happysun/data/dukascopy/weeks3/";
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         //dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+1"));
 
-        Date dateFrom = dateFormat.parse("2017/12/01 00:00:00");
-        Date dateTo = dateFormat.parse("2018/02/28 00:00:00");
+        //Date dateFrom = dateFormat.parse("2017/12/01 00:00:00");
+        Date dateFrom = dateFormat.parse("2018/01/23 00:00:00");
+        Date dateTo = dateFormat.parse("2018/05/28 00:00:00");
 
         System.out.println("Start date: "+dateFrom);
         System.out.println("End date: "+dateTo);
@@ -34,10 +35,10 @@ public class Main2 {
         System.out.println("Initializing components");
         SubscriptionInitializer initializer = new SubscriptionInitializer();
         List<SubscriptionWindowFeed> subWindows = initializer.InitSubscriptionWindowFeeds();
-        List<SubscriptionWindowIndicator> indicatorWindows = initializer.InitSubscriptionWindowIndicators();
+        List<SubscriptionWindowIndicator> indicatorWindows = initializer.InitSubscriptionWindowIndicators(1);
         FeedDescriptor feed = new TimePeriodAggregationFeedDescriptor(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, Filter.WEEKENDS);
 
-        DataForwarder_Historical forwarder = new DataForwarder_Historical(subWindows, indicatorWindows, feed, 15, savePath);
+        DataForwarder_Historical forwarder = new DataForwarder_Historical(subWindows, indicatorWindows, feed, 30, savePath);
 
         // Using Historical connector
         System.out.println("Connecting to stream");

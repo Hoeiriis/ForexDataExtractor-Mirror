@@ -22,7 +22,7 @@ public class MainClass {
         /* Initializing components */
 
         List<SubscriptionWindowFeed> subWindows = initializer.InitSubscriptionWindowFeeds();
-        List<SubscriptionWindowIndicator> indicatorWindows = initializer.InitSubscriptionWindowIndicators();
+        List<SubscriptionWindowIndicator> indicatorWindows = initializer.InitSubscriptionWindowIndicators(1);
 
         DataCollector theCollector = new DataCollector(true);
         theCollector.autoSubscribe(subWindows.toArray(new SubscriptionWindow[0]));
